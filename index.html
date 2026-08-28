@@ -525,6 +525,47 @@
             #palette-bar.palette-near-row .palette-color { width:40px; height:40px; }
         }
 
+
+
+        /* --- V7: color-faithful 3D + restrained gloss polish --- */
+        .palette-color {
+            /* Keep the swatch close to its literal CSS color; depth comes from highlights, not dark tinting. */
+            border-color: rgba(255,255,255,.72);
+            box-shadow:
+                inset 0 2px 3px rgba(255,255,255,.16),
+                inset 0 -3px 5px rgba(10,6,28,.12),
+                0 7px 16px rgba(4,3,18,.30),
+                0 0 0 1px rgba(255,255,255,.06);
+        }
+        .palette-color::before {
+            width:25%; height:16%; left:21%; top:14%;
+            background:rgba(255,255,255,.78);
+            filter:blur(.35px);
+        }
+        .palette-color::after {
+            width:58%; height:30%; right:-8%; bottom:-8%;
+            background:radial-gradient(ellipse at center, rgba(12,7,31,.12), rgba(12,7,31,0) 70%);
+        }
+        .palette-color:hover {
+            filter:saturate(1.04) brightness(1.015);
+            box-shadow:
+                inset 0 2px 3px rgba(255,255,255,.20),
+                inset 0 -3px 5px rgba(10,6,28,.10),
+                0 10px 22px rgba(4,3,18,.36),
+                0 0 0 2px rgba(255,255,255,.10);
+        }
+        #palette-bar.palette-docked {
+            border-color:rgba(203,190,255,.18);
+            box-shadow:0 16px 42px rgba(6,4,24,.42), inset 0 1px 0 rgba(255,255,255,.10), 0 0 20px rgba(111,88,255,.07);
+        }
+        #palette-bar.palette-near-row {
+            border-color:rgba(145,132,255,.30);
+            box-shadow:0 17px 42px rgba(4,3,18,.44), 0 0 18px rgba(111,88,255,.10), inset 0 1px 0 rgba(255,255,255,.10);
+        }
+        #submit-btn {
+            box-shadow:0 10px 24px rgba(0,200,220,.32), inset 0 -5px 9px rgba(0,0,0,.13), inset 0 5px 9px rgba(255,255,255,.34);
+        }
+        .history-row { box-shadow:inset 0 1px 0 rgba(255,255,255,.025); }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
@@ -838,17 +879,26 @@
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             renderer.shadowMap.enabled = true;
             renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            // CSS palette swatches are authored in sRGB. Match the WebGL output to that color space
+            // so a #RRGGBB marble reads like the same #RRGGBB swatch instead of a glowing variant.
+            if (THREE.sRGBEncoding !== undefined) renderer.outputEncoding = THREE.sRGBEncoding;
+            renderer.toneMapping = THREE.NoToneMapping;
             document.body.appendChild(renderer.domElement);
 
-            scene.add(new THREE.AmbientLight(0xffffff, 2.0)); 
-            
-            const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+            // Neutral, restrained studio lighting: enough shape for gloss without washing out hue.
+            scene.add(new THREE.AmbientLight(0xffffff, 0.68));
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 1.12);
             dirLight.position.set(5, 15, 8);
             dirLight.castShadow = true;
             dirLight.shadow.mapSize.width = 1024;
             dirLight.shadow.mapSize.height = 1024;
             dirLight.shadow.bias = -0.0005;
             scene.add(dirLight);
+
+            const fillLight = new THREE.DirectionalLight(0xffffff, 0.26);
+            fillLight.position.set(-8, 5, 5);
+            scene.add(fillLight);
 
             initGeometries();
             resizeCameraForMobile();
@@ -858,11 +908,15 @@
         function getActiveMaterial(hex) {
             const base = new THREE.Color(hex);
             const isWhite = hex === 0xffffff || hex === 0xf8f6ff;
-            const emissive = base.clone().multiplyScalar(isWhite ? 0.012 : 0.020);
             return new THREE.MeshPhysicalMaterial({
-                color: base, roughness: isWhite ? 0.25 : 0.17, metalness: 0.0,
-                clearcoat: 1.0, clearcoatRoughness: 0.055, reflectivity: 0.72,
-                emissive, emissiveIntensity: isWhite ? 0.08 : 0.14
+                // Literal palette color: no self-illumination / emissive hue shift.
+                color: base,
+                emissive: 0x000000, emissiveIntensity: 0,
+                metalness: 0.0,
+                roughness: isWhite ? 0.16 : 0.115,
+                clearcoat: 1.0,
+                clearcoatRoughness: 0.022,
+                reflectivity: 0.60
             });
         }
 
@@ -892,7 +946,7 @@
         function shadeColor(hex) {
             const c = new THREE.Color(hex);
             // Colored depth, never black: keeps the marble readable without the dark center spot.
-            c.offsetHSL(0, 0.03, -0.16);
+            c.offsetHSL(0, 0.015, -0.075);
             return c;
         }
 
@@ -900,13 +954,13 @@
             if (!ballHighlightTexture) ballHighlightTexture = makeSoftDiscTexture('highlight');
             if (!ballShadeTexture) ballShadeTexture = makeSoftDiscTexture('shade');
             const shade = new THREE.Sprite(new THREE.SpriteMaterial({
-                map: ballShadeTexture, color:shadeColor(hex), transparent:true, depthWrite:false, depthTest:false, opacity:.24
+                map: ballShadeTexture, color:shadeColor(hex), transparent:true, depthWrite:false, depthTest:false, opacity:.105
             }));
             shade.userData.ballAccent = 'shade';
-            shade.position.set(.19, -.22, .74); shade.scale.set(.78, .48, 1); shade.renderOrder = 25;
-            const hi = new THREE.Sprite(new THREE.SpriteMaterial({ map: ballHighlightTexture, transparent:true, depthWrite:false, depthTest:false, opacity:.96 }));
+            shade.position.set(.20, -.25, .74); shade.scale.set(.70, .40, 1); shade.renderOrder = 25;
+            const hi = new THREE.Sprite(new THREE.SpriteMaterial({ map: ballHighlightTexture, transparent:true, depthWrite:false, depthTest:false, opacity:.76 }));
             hi.userData.ballAccent = 'highlight';
-            hi.position.set(-.27, .30, .79); hi.scale.set(.29, .20, 1); hi.renderOrder = 26;
+            hi.position.set(-.27, .31, .79); hi.scale.set(.25, .16, 1); hi.renderOrder = 26;
             sphere.add(shade, hi);
         }
 
@@ -1007,7 +1061,7 @@
             trayMats.forEach((mat, idx) => {
                 if (idx === currentRow && (gameState === 'PLAYING' || gameState === 'P1_SETTING')) {
                     mat.emissive.setHex(gameState === 'P1_SETTING' ? 0x145b68 : 0x3a2685);
-                    mat.emissiveIntensity = gameState === 'P1_SETTING' ? 0.85 : 0.62;
+                    mat.emissiveIntensity = gameState === 'P1_SETTING' ? 0.22 : 0.16;
                 } else {
                     mat.emissive.setHex(0x000000);
                     mat.emissiveIntensity = 0;
@@ -1033,7 +1087,7 @@
             const boardHeight = settings.tries * rowSpacing + 10;
 
             // Wider neon-edged board: feedback tickets now stay inside this container.
-            const boardMat = new THREE.MeshStandardMaterial({ color: 0x22174a, roughness: 0.55, metalness: 0.06, emissive: 0x09031b, emissiveIntensity: 0.45 });
+            const boardMat = new THREE.MeshPhysicalMaterial({ color: 0x22174a, roughness: 0.44, metalness: 0.025, clearcoat: 0.36, clearcoatRoughness: 0.24, emissive: 0x05020f, emissiveIntensity: 0.12 });
             const board = new THREE.Mesh(new THREE.BoxGeometry(boardWidth, boardHeight, 2), boardMat);
             board.position.set(0, (settings.tries * rowSpacing) / 2 - 2, -1.2);
             board.receiveShadow = true;
@@ -1041,7 +1095,7 @@
 
             // Slim illuminated rails make the playable container read clearly.
             const railGeo = new THREE.BoxGeometry(0.10, boardHeight - 1.4, 0.11);
-            const railMat = new THREE.MeshBasicMaterial({ color: 0x6f58ff, transparent: true, opacity: 0.52 });
+            const railMat = new THREE.MeshBasicMaterial({ color: 0x6f58ff, transparent: true, opacity: 0.34 });
             [-1, 1].forEach(side => {
                 const rail = new THREE.Mesh(railGeo, railMat);
                 rail.position.set(side * (boardWidth / 2 - 0.18), board.position.y, -0.10);
@@ -1057,13 +1111,13 @@
             trayGeo.center();
 
             const slotGeo = new THREE.CylinderGeometry(0.8, 0.8, 0.1, 32);
-            const slotMat = new THREE.MeshStandardMaterial({ color: 0x160f33, roughness: 0.9 });
+            const slotMat = new THREE.MeshStandardMaterial({ color: 0x160f33, roughness: 0.72, metalness: 0.02 });
             const sphereGeo = new THREE.SphereGeometry(0.75, 32, 32);
 
             for (let row = 0; row < settings.tries; row++) {
                 let yPos = row * rowSpacing;
                 
-                let trayMat = new THREE.MeshStandardMaterial({ color: 0x2c1f5e, roughness: 0.6, emissive: 0x000000 });
+                let trayMat = new THREE.MeshPhysicalMaterial({ color: 0x2c1f5e, roughness: 0.42, metalness: 0.015, clearcoat: 0.34, clearcoatRoughness: 0.28, emissive: 0x000000, emissiveIntensity: 0 });
                 trayMats.push(trayMat);
 
                 let tray = new THREE.Mesh(trayGeo, trayMat);
