@@ -1,0 +1,1631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mastermind</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800;900&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #1b143c;
+            --bg-light: #2c1e5b;
+            --primary-cyan: #00e5ff;
+            --primary-purple: #b24bf3;
+            --exact-color: #ffffff; 
+            --close-color: #ff3b5c; 
+            --text-light: #fdf9ff;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            font-family: 'Poppins', sans-serif;
+            user-select: none;
+            touch-action: none;
+            background: radial-gradient(circle at 50% 0%, var(--bg-light) 0%, var(--bg-dark) 80%);
+            color: var(--text-light);
+        }
+
+        canvas { position: absolute; top: 0; left: 0; z-index: 1; }
+
+        /* --- LANDING SCREEN UI --- */
+        #landing-screen {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 50;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: radial-gradient(circle at 50% -20%, #2a1b54 0%, #16102b 100%);
+        }
+
+        .hero-title {
+            font-family: 'Baloo 2', sans-serif;
+            font-size: 56px; font-weight: 900; letter-spacing: 6px;
+            margin-bottom: 5px;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.4), 0 0 40px rgba(178, 75, 243, 0.4);
+        }
+
+        .hero-subtitle {
+            font-size: 15px; font-weight: 500; color: #b6aed2; margin-bottom: 40px;
+        }
+
+        .mode-cards {
+            display: flex; gap: 24px; margin-bottom: 30px;
+            width: 90%; max-width: 600px;
+        }
+
+        .mode-card {
+            flex: 1; padding: 30px 20px; border-radius: 20px; cursor: pointer;
+            display: flex; flex-direction: column; align-items: center; text-align: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .mode-card:hover { transform: translateY(-4px); }
+        .mode-card:active { transform: translateY(2px); }
+
+        .card-pve {
+            background: linear-gradient(135deg, #00f2c3 0%, #00b4d8 100%);
+            box-shadow: 0 15px 30px rgba(0, 229, 255, 0.25);
+            color: #05262b;
+        }
+        
+        .card-pvp {
+            background: linear-gradient(135deg, #df78ef 0%, #7f41de 100%);
+            box-shadow: 0 15px 30px rgba(178, 75, 243, 0.25);
+            color: #2b0532;
+        }
+
+        .mode-icon { width: 40px; height: 40px; margin-bottom: 12px; }
+        .mode-card h3 { font-family: 'Baloo 2', sans-serif; font-size: 20px; font-weight: 800; margin-bottom: 8px; letter-spacing: 1px;}
+        .mode-card p { font-size: 12px; font-weight: 600; opacity: 0.8; line-height: 1.4; }
+
+        .settings-panel {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 20px 30px;
+            width: 90%; max-width: 600px;
+            display: flex; flex-direction: column;
+        }
+
+        .setting-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 16px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .setting-row:last-child { border-bottom: none; padding-bottom: 0; }
+        .setting-label { font-size: 14px; font-weight: 600; color: #e0d8ff; }
+
+        .setting-options { display: flex; gap: 10px; }
+        
+        .opt-btn {
+            width: 32px; height: 32px; border-radius: 50%;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #fff; font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 700;
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+            transition: all 0.2s;
+        }
+        .opt-btn.active {
+            background: var(--primary-cyan); color: #000;
+            border-color: var(--primary-cyan);
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.5);
+        }
+
+        /* Toggle Switch */
+        .toggle-switch {
+            position: relative; width: 44px; height: 24px;
+            background: rgba(255,255,255,0.1); border-radius: 12px; cursor: pointer; transition: 0.3s;
+        }
+        .toggle-switch.active { background: var(--primary-cyan); box-shadow: 0 0 10px rgba(0, 229, 255, 0.4); }
+        .toggle-knob {
+            position: absolute; top: 2px; left: 2px; width: 20px; height: 20px;
+            background: #fff; border-radius: 50%; transition: 0.3s;
+        }
+        .toggle-switch.active .toggle-knob { transform: translateX(20px); }
+
+        /* --- IN-GAME UI --- */
+        #game-ui { display: none; }
+
+        #btn-back {
+            position: absolute; top: 20px; left: 20px; z-index: 20;
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+            backdrop-filter: blur(8px); border-radius: 12px; padding: 10px 16px;
+            color: #fff; font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600;
+            cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s;
+        }
+        #btn-back:hover { background: rgba(255,255,255,0.2); }
+        
+        #palette-bar {
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%); z-index: 10;
+            display: flex; gap: 10px; background: rgba(255,255,255,0.1); padding: 10px 20px;
+            border-radius: 100px; backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .palette-color {
+            width: 32px; height: 32px; border-radius: 50%; cursor: grab;
+            /* Updated to use bright white glow/shadows */
+            box-shadow: inset -2px -2px 4px rgba(0,0,0,0.25), inset 2px 2px 4px rgba(255,255,255,0.6), 0 0 14px rgba(255, 255, 255, 0.75);
+        }
+        .palette-color:active { cursor: grabbing; transform: scale(0.9); }
+
+        .drag-ghost {
+            position: fixed; width: 36px; height: 36px; border-radius: 50%;
+            pointer-events: none; z-index: 1000;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5), inset 2px 2px 4px rgba(255,255,255,0.6);
+            transform: translate(-50%, -50%);
+        }
+
+        #ui-left { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 10; }
+        #submit-btn {
+            width: 70px; height: 70px; border-radius: 50%; border: none; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            background: linear-gradient(135deg, #00f2c3, #00b4d8);
+            box-shadow: 0 10px 26px rgba(0, 200, 255, 0.5), inset 0 -6px 10px rgba(0,0,0,0.15), inset 0 6px 10px rgba(255,255,255,0.5);
+            transition: transform 0.15s; pointer-events: auto;
+        }
+        #submit-btn:disabled { filter: grayscale(1); opacity: 0.5; cursor: not-allowed; }
+        #submit-btn svg { width: 30px; height: 30px; }
+        #submit-btn:active:not(:disabled) { transform: scale(0.9); }
+        #submit-label { text-align: center; margin-top: 8px; font-size: 13px; font-weight: 700; letter-spacing: 1px; }
+
+        #ui-right {
+            position: absolute; top: 80px; right: 20px; width: 220px; max-height: 65vh;
+            background: rgba(25, 18, 54, 0.6); backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; z-index: 10;
+            display: flex; flex-direction: column; box-shadow: 0 12px 32px rgba(0,0,0,0.5);
+        }
+
+        .history-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .header-label { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 9px; font-weight: 700;}
+        
+        #history-list { display: flex; flex-direction: column-reverse; overflow-y: auto; padding: 12px; gap: 10px; }
+        .history-row { display: flex; align-items: center; justify-content: space-between; gap: 4px; animation: rowIn 0.3s; }
+        @keyframes rowIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
+        .hist-badge {
+            width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: 12px; font-family: 'Baloo 2', sans-serif;
+        }
+        .hist-badge.exact { background: var(--exact-color); color: #000; box-shadow: 0 0 8px rgba(255,255,255,0.5); }
+        .hist-badge.close { background: var(--close-color); color: #fff; box-shadow: 0 0 8px rgba(255,59,92,0.6); }
+
+        .history-colors { display: flex; gap: 4px; flex-grow: 1; justify-content: center;}
+        .history-dot { width: 12px; height: 12px; border-radius: 50%; box-shadow: inset -1px -1px 3px rgba(0,0,0,0.4), inset 1px 1px 3px rgba(255,255,255,0.6); }
+
+        #status-overlay {
+            position: absolute; top: 90px; left: 50%; transform: translateX(-50%) scale(0.9);
+            text-align: center; font-family: 'Baloo 2', sans-serif; font-size: 22px; font-weight: 800; pointer-events: none;
+            letter-spacing: 2px; padding: 12px 28px; border-radius: 100px; z-index: 20; opacity: 0; transition: 0.3s;
+        }
+
+        #transition-screen {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 50; display: none;
+            flex-direction: column; align-items: center; justify-content: center;
+            background: rgba(21, 10, 48, 0.95); backdrop-filter: blur(25px);
+        }
+        #transition-screen h2 { font-family: 'Baloo 2', sans-serif; font-size: 36px; color: #00e5ff; margin-bottom: 10px; }
+        
+        .btn-ready {
+            margin-top: 20px; background: var(--primary-cyan); border: none; padding: 16px 40px; border-radius: 100px;
+            font-family: 'Baloo 2', sans-serif; font-size: 20px; font-weight: 800; color: #000; cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .hero-title { font-size: 36px; }
+            .mode-cards { flex-direction: column; gap: 16px; }
+            .mode-card { padding: 20px; }
+            #btn-back { top: 10px; left: 10px; padding: 8px 12px; font-size: 11px; }
+            #palette-bar { top: 10px; padding: 8px 12px; }
+            .palette-color { width: 28px; height: 28px; }
+            #ui-right { top: 70px; width: 170px; right: 10px; }
+            .hist-badge { width: 20px; height: 20px; font-size: 10px; }
+            .history-dot { width: 10px; height: 10px; }
+        }
+
+
+        /* --- POLISH PASS: playful atmosphere + clearer game HUD --- */
+        body {
+            background:
+                radial-gradient(circle at 18% 16%, rgba(0,229,255,.13), transparent 28%),
+                radial-gradient(circle at 82% 18%, rgba(255,102,178,.12), transparent 30%),
+                radial-gradient(circle at 50% 100%, rgba(178,75,243,.18), transparent 42%),
+                linear-gradient(180deg, #25164f 0%, #120d2b 100%);
+        }
+        body::before {
+            content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,.018) 1px, transparent 1px);
+            background-size: 38px 38px;
+            mask-image: linear-gradient(to bottom, rgba(0,0,0,.7), transparent 88%);
+        }
+        body::after {
+            content: ""; position: fixed; width: 48vw; height: 48vw; left: 50%; bottom: -34vw;
+            transform: translateX(-50%); border-radius: 50%; pointer-events: none; z-index: 0;
+            background: rgba(0,229,255,.09); filter: blur(55px);
+            animation: ambientPulse 5s ease-in-out infinite alternate;
+        }
+        @keyframes ambientPulse { to { transform: translateX(-50%) scale(1.12); opacity: .65; } }
+
+        #landing-screen {
+            background:
+                radial-gradient(circle at 50% 2%, rgba(77,51,142,.55), transparent 32%),
+                linear-gradient(180deg, rgba(22,16,43,.84), rgba(16,10,34,.97));
+        }
+        .hero-title {
+            background: linear-gradient(180deg,#fff 12%,#c6f9ff 48%,#d7a9ff 100%);
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+        }
+        .mode-card { position: relative; overflow: hidden; isolation: isolate; }
+        .mode-card::after {
+            content:""; position:absolute; width:120px; height:220px; top:-80px; left:-145px;
+            background:linear-gradient(90deg, transparent, rgba(255,255,255,.32), transparent);
+            transform:rotate(25deg); transition:left .55s ease; z-index:-1;
+        }
+        .mode-card:hover::after { left:115%; }
+        .settings-panel { box-shadow: 0 24px 70px rgba(0,0,0,.2); backdrop-filter: blur(14px); }
+
+        #btn-back { box-shadow: 0 10px 30px rgba(0,0,0,.2); }
+
+        #palette-bar {
+            top: 18px; gap: 12px; padding: 12px 18px; flex-wrap: wrap; justify-content: center;
+            background: rgba(24,17,54,.74); border: 1px solid rgba(255,255,255,.16);
+            box-shadow: 0 14px 40px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.08);
+            transition: top .18s ease, left .18s ease, transform .18s ease, padding .18s ease;
+        }
+        #palette-bar::before {
+            content: "COLOR LAB"; position: absolute; left: 50%; top: -24px; transform: translateX(-50%);
+            font-family: 'Baloo 2',sans-serif; font-size: 10px; font-weight: 900; letter-spacing: 1.6px;
+            color: rgba(225,244,255,.82); white-space: nowrap; text-shadow: 0 2px 8px rgba(0,0,0,.5);
+        }
+        #palette-bar.palette-near-row {
+            padding: 15px 20px; gap: 14px;
+            background: rgba(20,14,47,.92); border-color: rgba(0,229,255,.34);
+            box-shadow: 0 16px 46px rgba(0,0,0,.42), 0 0 26px rgba(0,229,255,.14);
+        }
+        #palette-bar.palette-near-row::before { content: "PLAYER 1 • LOCK YOUR SECRET"; color:#9ff8ff; top:-27px; }
+        #palette-bar.palette-near-row .palette-color { width: 48px; height: 48px; }
+        .palette-color {
+            width: 36px; height: 36px; border: 3px solid rgba(255,255,255,.78);
+            transition: transform .15s ease, filter .15s ease, box-shadow .15s ease;
+        }
+        .palette-color:hover { transform: translateY(-4px) scale(1.08); filter: saturate(1.12); }
+        .palette-color:active { transform: translateY(1px) scale(.93); }
+
+        #turn-pill {
+            margin: 0 auto 10px; width: max-content; padding: 6px 11px; border-radius: 100px;
+            background: rgba(17,11,40,.72); border: 1px solid rgba(255,255,255,.12);
+            font-family:'Baloo 2',sans-serif; font-size:11px; font-weight:900; letter-spacing:1px; color:#c8faff;
+            box-shadow: 0 8px 20px rgba(0,0,0,.22); backdrop-filter: blur(10px);
+        }
+
+        #ui-right {
+            background: linear-gradient(180deg, rgba(31,22,68,.86), rgba(19,13,45,.78));
+            border-color: rgba(255,255,255,.14);
+        }
+        .history-header::before {
+            content:"GUESSES"; font-family:'Baloo 2',sans-serif; font-size:11px; font-weight:900;
+            letter-spacing:1.4px; color:#bdf9ff; margin-right:8px;
+        }
+        .history-row {
+            padding: 7px 8px; border-radius: 10px; background: rgba(255,255,255,.035);
+            border: 1px solid rgba(255,255,255,.045);
+        }
+        #submit-btn:hover:not(:disabled) { transform: translateY(-3px) scale(1.04); }
+        #submit-label { text-shadow: 0 3px 10px rgba(0,0,0,.65); }
+
+        #status-overlay {
+            backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,.22);
+            text-shadow: 0 2px 8px rgba(0,0,0,.35);
+        }
+        #transition-screen {
+            background:
+                radial-gradient(circle at 50% 35%, rgba(0,229,255,.15), transparent 26%),
+                rgba(15,8,35,.94);
+        }
+        #transition-screen h2 { text-shadow: 0 0 24px rgba(0,229,255,.5); }
+        .btn-ready { box-shadow: 0 12px 30px rgba(0,229,255,.26); transition: transform .15s ease, box-shadow .15s ease; }
+        .btn-ready:hover { transform: translateY(-3px); box-shadow: 0 16px 36px rgba(0,229,255,.34); }
+
+        @media (max-width: 768px) {
+            #palette-bar { max-width: calc(100vw - 24px); gap: 8px; padding: 10px 12px; }
+            #palette-bar.palette-near-row { gap: 10px; padding: 12px 14px; }
+            #palette-bar.palette-near-row .palette-color { width: 42px; height: 42px; }
+            #ui-right { opacity: .92; }
+        }
+
+
+        /* --- V2: palette presets, floating color dock, glossy marbles + feedback styles --- */
+        #landing-screen { overflow-y: auto; padding: 24px 0; touch-action: pan-y; }
+        .mode-cards, .settings-panel { max-width: 720px; }
+        .settings-panel { padding: 16px 26px; }
+        .setting-row { gap: 18px; }
+        .setting-copy { display:flex; flex-direction:column; gap:3px; min-width: 122px; }
+        .setting-hint { color:#8f86b7; font-size:10px; line-height:1.3; font-weight:600; }
+
+        .preset-options { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+        .preset-btn, .feedback-choice {
+            border:1px solid rgba(255,255,255,.10); color:#eee9ff; cursor:pointer;
+            background:rgba(255,255,255,.055); border-radius:13px; min-height:42px;
+            font-family:'Poppins',sans-serif; font-weight:800; transition:.18s ease;
+        }
+        .preset-btn { padding:7px 10px; display:flex; flex-direction:column; align-items:flex-start; gap:5px; min-width:86px; }
+        .preset-btn:hover, .feedback-choice:hover { transform:translateY(-2px); background:rgba(255,255,255,.095); }
+        .preset-btn.active, .feedback-choice.active {
+            border-color:rgba(0,229,255,.62); background:rgba(0,229,255,.10);
+            box-shadow:0 0 0 1px rgba(0,229,255,.12), 0 8px 24px rgba(0,229,255,.12);
+        }
+        .preset-name { font-family:'Baloo 2',sans-serif; letter-spacing:.7px; font-size:11px; }
+        .preset-swatches { display:flex; gap:3px; }
+        .preset-dot { display:inline-block; width:10px; height:10px; border-radius:50%; border:1px solid rgba(255,255,255,.40); box-shadow:inset 0 1px 2px rgba(255,255,255,.55), 0 1px 3px rgba(0,0,0,.35); }
+
+        .feedback-options { display:flex; gap:8px; }
+        .feedback-choice { padding:7px 11px; display:flex; align-items:center; gap:8px; font-size:10px; letter-spacing:.5px; }
+        .style-icon { width:34px; height:24px; position:relative; display:inline-block; }
+        .style-icon.pull::before, .style-icon.pull::after {
+            content:""; position:absolute; top:7px; width:18px; height:10px; background:#fff; border-radius:5px 2px 2px 5px;
+            box-shadow:0 2px 5px rgba(0,0,0,.25);
+        }
+        .style-icon.pull::before { left:0; }
+        .style-icon.pull::after { right:0; background:#ff4d78; transform:scaleX(-1); }
+        .style-icon.fan span { position:absolute; width:16px; height:21px; border-radius:4px; top:1px; left:9px; box-shadow:0 2px 5px rgba(0,0,0,.24); }
+        .style-icon.fan span:nth-child(1){ background:#fff; transform:rotate(-22deg) translateX(-6px); }
+        .style-icon.fan span:nth-child(2){ background:#ff4d78; transform:rotate(22deg) translateX(6px); }
+        .style-icon.fan span:nth-child(3){ background:#7a64ff; transform:rotate(0deg); }
+
+        #palette-bar.palette-docked {
+            top:20px; padding:10px 15px 11px; gap:10px; border-radius:22px;
+            background:linear-gradient(180deg, rgba(35,25,77,.94), rgba(17,12,42,.94));
+            border:1px solid rgba(203,190,255,.22);
+            box-shadow:0 18px 46px rgba(6,4,24,.46), inset 0 1px 0 rgba(255,255,255,.12), 0 0 24px rgba(111,88,255,.10);
+        }
+        #palette-bar.palette-docked::before { content:"COLOR DOCK"; top:-22px; color:#c7beff; }
+        #palette-bar.palette-docked::after {
+            content:""; position:absolute; left:50%; bottom:-10px; transform:translateX(-50%) rotate(45deg);
+            width:17px; height:17px; background:#171033; border-right:1px solid rgba(203,190,255,.20); border-bottom:1px solid rgba(203,190,255,.20);
+            box-shadow:7px 7px 14px rgba(4,3,17,.16); z-index:-1;
+        }
+        #palette-bar.palette-near-row { padding:12px 17px 13px; gap:11px; }
+        #palette-bar.palette-near-row::before { content:"PLAYER 1 • BUILD THE SECRET"; top:-24px; }
+        #palette-bar.palette-near-row .palette-color { width:46px; height:46px; }
+        .palette-color {
+            position:relative; overflow:hidden; border:2px solid rgba(255,255,255,.82);
+            box-shadow:inset -5px -8px 10px rgba(18,8,49,.30), inset 3px 4px 6px rgba(255,255,255,.25), 0 5px 12px rgba(0,0,0,.36), 0 0 10px rgba(255,255,255,.16);
+        }
+        .palette-color::before {
+            content:""; position:absolute; width:28%; height:19%; left:20%; top:15%; border-radius:50%;
+            background:rgba(255,255,255,.92); filter:blur(.25px); transform:rotate(-15deg);
+        }
+        .palette-color::after {
+            content:""; position:absolute; width:64%; height:38%; right:-9%; bottom:-9%; border-radius:50%;
+            background:radial-gradient(ellipse at center, rgba(18,9,50,.34), rgba(18,9,50,0) 68%); transform:rotate(-18deg);
+        }
+        .palette-color[data-light="true"] { border-color:#b9b2db; }
+        .drag-ghost {
+            width:42px; height:42px; border:2px solid rgba(255,255,255,.9);
+            box-shadow:inset -6px -8px 12px rgba(18,8,49,.28), inset 4px 5px 7px rgba(255,255,255,.34), 0 13px 26px rgba(0,0,0,.48);
+        }
+
+
+        .creator-credit {
+            margin-top: 16px; padding: 7px 13px; border-radius: 999px;
+            font-family:'Baloo 2',sans-serif; font-size:11px; font-weight:800; letter-spacing:1.4px;
+            color:#bfb7df; background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.07);
+            box-shadow:inset 0 1px 0 rgba(255,255,255,.05); text-transform:uppercase;
+        }
+        .creator-credit strong { color:#fff; text-shadow:0 0 14px rgba(178,75,243,.45); }
+
+        .custom-palette-editor {
+            display:none; width:100%; margin-top:12px; padding:12px 14px;
+            border-radius:16px; background:rgba(11,7,31,.48); border:1px solid rgba(189,174,255,.14);
+            box-shadow:inset 0 1px 0 rgba(255,255,255,.055);
+        }
+        .custom-palette-editor.open { display:block; animation:customPaletteIn .2s ease both; }
+        @keyframes customPaletteIn { from{opacity:0;transform:translateY(-5px) scale(.99)} to{opacity:1;transform:none} }
+        .custom-editor-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px; }
+        .custom-editor-title { font-size:10px; font-weight:800; letter-spacing:1px; color:#cfc6f5; }
+        .custom-editor-note { font-size:9px; font-weight:600; color:#8077a8; }
+        .custom-color-grid { display:grid; grid-template-columns:repeat(8, minmax(34px,1fr)); gap:8px; }
+        .custom-color-well {
+            position:relative; height:42px; min-width:34px; border-radius:13px; overflow:hidden;
+            border:1px solid rgba(255,255,255,.22); background:#211842;
+            box-shadow:0 5px 13px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.12);
+            transition:transform .16s ease, box-shadow .16s ease;
+        }
+        .custom-color-well:hover { transform:translateY(-2px); box-shadow:0 8px 18px rgba(0,0,0,.28), 0 0 0 1px rgba(255,255,255,.1); }
+        .custom-color-well input[type=color] { position:absolute; inset:-8px; width:calc(100% + 16px); height:calc(100% + 16px); border:0; padding:0; cursor:pointer; }
+        .custom-color-well span {
+            position:absolute; right:4px; bottom:3px; pointer-events:none; font-family:'Baloo 2'; font-weight:900;
+            font-size:9px; color:#fff; text-shadow:0 1px 4px #000,0 0 3px #000;
+        }
+        .preset-btn.custom-preset { min-width:92px; }
+        .preset-btn.custom-preset .preset-dot { outline:1px dashed rgba(255,255,255,.26); outline-offset:1px; }
+
+        /* Cleaner marble treatment: bright glossy highlight, no black center bloom. */
+        .palette-color {
+            box-shadow:inset -4px -6px 9px rgba(50,32,90,.12), inset 3px 4px 6px rgba(255,255,255,.24),
+                       0 7px 15px rgba(0,0,0,.36), 0 0 13px rgba(255,255,255,.13);
+        }
+        .palette-color::after {
+            width:58%; height:30%; right:-6%; bottom:-6%;
+            background:radial-gradient(ellipse at center, rgba(68,42,116,.12), rgba(68,42,116,0) 70%);
+        }
+        #palette-bar.palette-docked {
+            border-color:rgba(223,214,255,.25);
+            background:linear-gradient(180deg, rgba(39,28,84,.97), rgba(15,10,37,.97));
+            box-shadow:0 14px 34px rgba(5,3,22,.48), inset 0 1px 0 rgba(255,255,255,.15), 0 0 30px rgba(121,95,255,.13);
+        }
+        #palette-bar.palette-docked::before { letter-spacing:2px; font-size:10px; font-weight:900; }
+        #palette-bar.palette-near-row { padding:10px 15px 11px; border-radius:20px; }
+        #palette-bar.palette-near-row .palette-color { width:44px; height:44px; }
+
+
+        /* V5: quick-copy previous guess + clearer feedback choreography. */
+        #copy-last-btn {
+            position:absolute; z-index:24; display:none; align-items:center; gap:7px;
+            min-height:34px; padding:7px 11px 7px 9px; border-radius:999px; cursor:pointer;
+            border:1px solid rgba(207,197,255,.24); color:#f7f4ff;
+            background:linear-gradient(180deg,rgba(42,31,91,.96),rgba(18,12,43,.96));
+            box-shadow:0 9px 22px rgba(6,3,24,.38), inset 0 1px 0 rgba(255,255,255,.12);
+            font:800 9px/1 'Poppins',sans-serif; letter-spacing:.65px; white-space:nowrap;
+            transform:translate(-50%,-50%); transition:transform .15s ease, box-shadow .15s ease, opacity .15s ease;
+        }
+        #copy-last-btn:hover { transform:translate(-50%,-50%) scale(1.05); box-shadow:0 12px 28px rgba(6,3,24,.46),0 0 18px rgba(0,229,255,.13),inset 0 1px 0 rgba(255,255,255,.16); }
+        #copy-last-btn:active { transform:translate(-50%,-50%) scale(.96); }
+        #copy-last-btn .copy-icon {
+            width:20px; height:20px; border-radius:7px; display:grid; place-items:center;
+            background:linear-gradient(135deg,#00e5ff,#8b65ff); color:#0c1531;
+            box-shadow:0 4px 10px rgba(0,229,255,.24); font-size:14px; font-weight:900;
+        }
+        #copy-last-btn .copy-sub { color:#9e95c8; font-size:7px; letter-spacing:.35px; margin-left:-3px; }
+        @media (max-width:768px){
+            #copy-last-btn{padding:6px 9px 6px 7px;min-height:31px;font-size:8px}
+            #copy-last-btn .copy-icon{width:18px;height:18px;font-size:12px}
+            #copy-last-btn .copy-sub{display:none}
+        }
+
+        /* V4: signature default + physically connected pull-tab preview. */
+        .preset-name small {
+            margin-left:4px; padding:1px 5px; border-radius:999px; vertical-align:1px;
+            font:800 7px/1 'Poppins',sans-serif; letter-spacing:.55px; color:#091d28; background:#8ff6ff;
+        }
+        .default-preset { min-width:108px; }
+        .style-icon.pull::before, .style-icon.pull::after { width:19px; }
+        .style-icon.pull::before { left:1px; border-radius:6px 0 0 6px; }
+        .style-icon.pull::after { right:1px; border-radius:0 6px 6px 0; transform:none; }
+        .style-icon.pull { background:linear-gradient(90deg,transparent 4px,rgba(255,255,255,.24) 4px,rgba(255,255,255,.24) 30px,transparent 30px); }
+
+        @media (max-width: 768px) {
+            .custom-color-grid { grid-template-columns:repeat(4,1fr); }
+            .custom-palette-editor { padding:10px; }
+            .creator-credit { margin-top:12px; }
+        }
+
+        @media (max-height: 820px) {
+            #landing-screen { justify-content:flex-start; }
+            .hero-title { margin-top:8px; }
+            .hero-subtitle { margin-bottom:20px; }
+            .mode-cards { margin-bottom:16px; }
+            .mode-card { padding:20px 16px; }
+            .setting-row { padding:11px 0; }
+        }
+        @media (max-width: 768px) {
+            .settings-panel { padding:12px 16px; }
+            .setting-row { align-items:flex-start; }
+            .preset-options, .feedback-options { max-width:62%; }
+            .preset-btn { min-width:72px; padding:6px 8px; }
+            .feedback-choice { padding:6px 8px; }
+            #palette-bar.palette-docked { max-width:calc(100vw - 18px); }
+            #palette-bar.palette-near-row .palette-color { width:40px; height:40px; }
+        }
+
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <!-- LANDING SCREEN -->
+    <div id="landing-screen">
+        <h1 class="hero-title">MASTERMIND</h1>
+        <p class="hero-subtitle">Crack the secret color code before you run out of tries.</p>
+        
+        <div class="mode-cards">
+            <div class="mode-card card-pve" onclick="startGame(1)">
+                <svg class="mode-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                <h3>VS COMPUTER</h3>
+                <p>The computer hides a random code. You try to crack it.</p>
+            </div>
+            <div class="mode-card card-pvp" onclick="startGame(2)">
+                <svg class="mode-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                <h3>TWO PLAYERS</h3>
+                <p>Player 1 sets a secret code, then passes the device for Player 2 to guess.</p>
+            </div>
+        </div>
+
+        <div class="settings-panel">
+            <div class="setting-row">
+                <div class="setting-copy">
+                    <span class="setting-label">Color Set</span>
+                    <span class="setting-hint">Choose the marble palette.</span>
+                </div>
+                <div class="preset-options" id="opt-palette">
+                    <button class="preset-btn active default-preset" onclick="setPalettePreset(this, 'signature')">
+                        <span class="preset-name">SIGNATURE <small>DEFAULT</small></span><span class="preset-swatches">
+                            <i class="preset-dot" style="background:#ff5b70"></i><i class="preset-dot" style="background:#242424"></i><i class="preset-dot" style="background:#4b9ff5"></i><i class="preset-dot" style="background:#087a46"></i><i class="preset-dot" style="background:#f8f6ff"></i><i class="preset-dot" style="background:#6a2607"></i><i class="preset-dot" style="background:#35008f"></i><i class="preset-dot" style="background:#efff00"></i>
+                        </span>
+                    </button>
+                    <button class="preset-btn" onclick="setPalettePreset(this, 'pop')">
+                        <span class="preset-name">POP</span><span class="preset-swatches">
+                            <i class="preset-dot" style="background:#ff243d"></i><i class="preset-dot" style="background:#ff6a00"></i><i class="preset-dot" style="background:#ff4fbd"></i><i class="preset-dot" style="background:#00cf76"></i><i class="preset-dot" style="background:#f8f6ff"></i><i class="preset-dot" style="background:#245cff"></i>
+                        </span>
+                    </button>
+                    <button class="preset-btn" onclick="setPalettePreset(this, 'neon')">
+                        <span class="preset-name">NEON</span><span class="preset-swatches">
+                            <i class="preset-dot" style="background:#ff174f"></i><i class="preset-dot" style="background:#ff7600"></i><i class="preset-dot" style="background:#d441ff"></i><i class="preset-dot" style="background:#00f27c"></i><i class="preset-dot" style="background:#ffffff"></i><i class="preset-dot" style="background:#00a8ff"></i>
+                        </span>
+                    </button>
+                    <button class="preset-btn" onclick="setPalettePreset(this, 'classic')">
+                        <span class="preset-name">CLASSIC</span><span class="preset-swatches">
+                            <i class="preset-dot" style="background:#ff243d"></i><i class="preset-dot" style="background:#ff6a00"></i><i class="preset-dot" style="background:#f2ff32"></i><i class="preset-dot" style="background:#00cf76"></i><i class="preset-dot" style="background:#11cfff"></i><i class="preset-dot" style="background:#245cff"></i>
+                        </span>
+                    </button>
+                    <button class="preset-btn custom-preset" id="custom-preset-btn" onclick="setPalettePreset(this, 'custom')">
+                        <span class="preset-name">CUSTOM</span><span class="preset-swatches" id="custom-preset-swatches">
+                            <i class="preset-dot" style="background:#ff5b70"></i><i class="preset-dot" style="background:#242424"></i><i class="preset-dot" style="background:#4b9ff5"></i><i class="preset-dot" style="background:#087a46"></i><i class="preset-dot" style="background:#f8f6ff"></i><i class="preset-dot" style="background:#6a2607"></i><i class="preset-dot" style="background:#35008f"></i><i class="preset-dot" style="background:#efff00"></i>
+                        </span>
+                    </button>
+                </div>
+                <div class="custom-palette-editor" id="custom-palette-editor">
+                    <div class="custom-editor-head">
+                        <span class="custom-editor-title">BUILD YOUR OWN SET</span>
+                        <span class="custom-editor-note">Tap any swatch • up to 8 colors</span>
+                    </div>
+                    <div class="custom-color-grid">
+                        <label class="custom-color-well"><input type="color" value="#ff5b70" oninput="setCustomColor(0,this.value)"><span>1</span></label>
+                        <label class="custom-color-well"><input type="color" value="#242424" oninput="setCustomColor(1,this.value)"><span>2</span></label>
+                        <label class="custom-color-well"><input type="color" value="#4b9ff5" oninput="setCustomColor(2,this.value)"><span>3</span></label>
+                        <label class="custom-color-well"><input type="color" value="#087a46" oninput="setCustomColor(3,this.value)"><span>4</span></label>
+                        <label class="custom-color-well"><input type="color" value="#f8f6ff" oninput="setCustomColor(4,this.value)"><span>5</span></label>
+                        <label class="custom-color-well"><input type="color" value="#6a2607" oninput="setCustomColor(5,this.value)"><span>6</span></label>
+                        <label class="custom-color-well"><input type="color" value="#35008f" oninput="setCustomColor(6,this.value)"><span>7</span></label>
+                        <label class="custom-color-well"><input type="color" value="#efff00" oninput="setCustomColor(7,this.value)"><span>8</span></label>
+                    </div>
+                </div>
+            </div>
+            <div class="setting-row">
+                <span class="setting-label">Colors in Play</span>
+                <div class="setting-options" id="opt-colors">
+                    <div class="opt-btn" onclick="setOpt(this, 'colors', 4)">4</div>
+                    <div class="opt-btn" onclick="setOpt(this, 'colors', 5)">5</div>
+                    <div class="opt-btn" onclick="setOpt(this, 'colors', 6)">6</div>
+                    <div class="opt-btn" onclick="setOpt(this, 'colors', 7)">7</div>
+                    <div class="opt-btn active" onclick="setOpt(this, 'colors', 8)">8</div>
+                </div>
+            </div>
+            <div class="setting-row">
+                <span class="setting-label">Code Length</span>
+                <div class="setting-options" id="opt-length">
+                    <div class="opt-btn" onclick="setOpt(this, 'length', 3)">3</div>
+                    <div class="opt-btn" onclick="setOpt(this, 'length', 4)">4</div>
+                    <div class="opt-btn active" onclick="setOpt(this, 'length', 5)">5</div>
+                </div>
+            </div>
+            <div class="setting-row">
+                <span class="setting-label">Max Tries</span>
+                <div class="setting-options" id="opt-tries">
+                    <div class="opt-btn" onclick="setOpt(this, 'tries', 6)">6</div>
+                    <div class="opt-btn" onclick="setOpt(this, 'tries', 8)">8</div>
+                    <div class="opt-btn active" onclick="setOpt(this, 'tries', 10)">10</div>
+                    <div class="opt-btn" onclick="setOpt(this, 'tries', 12)">12</div>
+                </div>
+            </div>
+            <div class="setting-row">
+                <div class="setting-copy">
+                    <span class="setting-label">Feedback Style</span>
+                    <span class="setting-hint">How exact / misplaced tickets appear.</span>
+                </div>
+                <div class="feedback-options" id="opt-ticket-style">
+                    <button class="feedback-choice" onclick="setTicketStyle(this, 'pull')"><span class="style-icon pull"></span>PULL TABS</button>
+                    <button class="feedback-choice active" onclick="setTicketStyle(this, 'fan')"><span class="style-icon fan"><span></span><span></span><span></span></span>FAN CARDS</button>
+                </div>
+            </div>
+            <div class="setting-row">
+                <span class="setting-label">Allow Duplicate Colors</span>
+                <div class="toggle-switch active" id="opt-dupes" onclick="toggleDupes()">
+                    <div class="toggle-knob"></div>
+                </div>
+            </div>
+        </div>
+        <div class="creator-credit">Made by <strong>6bdessamad</strong></div>
+    </div>
+
+    <!-- TRANSITION SCREEN -->
+    <div id="transition-screen">
+        <h2>CODE LOCKED</h2>
+        <p style="margin-bottom: 20px; opacity: 0.8;">Pass the device to Player 2.</p>
+        <button class="btn-ready" onclick="startPlayer2()">I AM READY</button>
+    </div>
+
+    <!-- GAME UI -->
+    <div id="game-ui">
+        <button id="btn-back" onclick="backToMenu()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            Menu
+        </button>
+        <div id="palette-bar"></div>
+        <button id="copy-last-btn" type="button" onclick="copyLastGuess()" title="Copy the previous guess into this row">
+            <span class="copy-icon">↺</span><span>LAST GUESS</span><span class="copy-sub">COPY + EDIT</span>
+        </button>
+        <div id="ui-left">
+            <div id="turn-pill">TRY 1 / 10</div>
+            <button id="submit-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#0b2b33" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 13 9 18 20 6"></polyline></svg>
+            </button>
+            <div id="submit-label">CHECK</div>
+        </div>
+        <div id="ui-right">
+            <div class="history-header">
+                <div class="header-label exact"><span style="color:#fff; font-size: 14px;">●</span> EXACT</div>
+                <div class="header-label close"><span style="color:#ff3b5c; font-size: 14px;">●</span> MISPLACED</div>
+            </div>
+            <div id="history-list"></div>
+        </div>
+        <div id="status-overlay"></div>
+    </div>
+
+    <script>
+        // --- 1. SETTINGS & STATE ---
+        const COLOR_SETS = {
+            // User-selected eight-color set, now preserved as a reusable preset.
+            signature: {
+                colors: [0xff5b70, 0x242424, 0x4b9ff5, 0x087a46, 0xf8f6ff, 0x6a2607, 0x35008f, 0xefff00],
+                css: ['#ff5b70', '#242424', '#4b9ff5', '#087a46', '#f8f6ff', '#6a2607', '#35008f', '#efff00']
+            },
+            // High-separation hues chosen to remain distinct under the board lighting.
+            pop: {
+                colors: [0xff243d, 0xff6a00, 0xff4fbd, 0x00cf76, 0xf8f6ff, 0x245cff, 0x8f43ff, 0xf2ff32],
+                css: ['#ff243d', '#ff6a00', '#ff4fbd', '#00cf76', '#f8f6ff', '#245cff', '#8f43ff', '#f2ff32']
+            },
+            neon: {
+                colors: [0xff174f, 0xff7600, 0xd441ff, 0x00f27c, 0xffffff, 0x00a8ff, 0x7147ff, 0xeaff00],
+                css: ['#ff174f', '#ff7600', '#d441ff', '#00f27c', '#ffffff', '#00a8ff', '#7147ff', '#eaff00']
+            },
+            classic: {
+                colors: [0xff243d, 0xff6a00, 0xf2ff32, 0x00cf76, 0x11cfff, 0x245cff, 0x8f43ff, 0xff4fbd],
+                css: ['#ff243d', '#ff6a00', '#f2ff32', '#00cf76', '#11cfff', '#245cff', '#8f43ff', '#ff4fbd']
+            }
+        };
+        let CUSTOM_CSS = ['#ff5b70','#242424','#4b9ff5','#087a46','#f8f6ff','#6a2607','#35008f','#efff00'];
+        let CUSTOM_COLORS = CUSTOM_CSS.map(c => parseInt(c.slice(1), 16));
+        
+        let settings = { colors: 8, length: 5, tries: 10, dupes: true, palette: 'signature', ticketStyle: 'fan' };
+        let gameMode = 1; 
+        let gameState = 'LANDING'; // LANDING, P1_SETTING, PLAYING, ANIMATING, OVER
+        
+        let ACTIVE_COLORS = [], ACTIVE_CSS = [];
+        let currentRow = 0, currentGuess = [], targetCode = [];
+        let guessHistory = [];
+        const rowSpacing = 3.2;
+        
+        let scene, camera, renderer;
+        let guessSpheres = [], slideTickets = [], activeTicketBlocks = [], activeParticles = [];
+        let trayMats = [];
+        let cameraTargetY = 0, cameraCurrentY = 0;
+        let reqAnimFrameId;
+
+        // --- UI LOGIC ---
+        function setOpt(btn, type, val) {
+            settings[type] = val;
+            const container = document.getElementById(`opt-${type}`);
+            container.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+
+        function setPalettePreset(btn, key) {
+            settings.palette = key;
+            document.querySelectorAll('#opt-palette .preset-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const editor = document.getElementById('custom-palette-editor');
+            if (editor) editor.classList.toggle('open', key === 'custom');
+        }
+
+        function setCustomColor(index, value) {
+            const hex = value.toLowerCase();
+            CUSTOM_CSS[index] = hex;
+            CUSTOM_COLORS[index] = parseInt(hex.slice(1), 16);
+            settings.palette = 'custom';
+            document.querySelectorAll('#opt-palette .preset-btn').forEach(b => b.classList.remove('active'));
+            const customBtn = document.getElementById('custom-preset-btn');
+            if (customBtn) customBtn.classList.add('active');
+            const editor = document.getElementById('custom-palette-editor');
+            if (editor) editor.classList.add('open');
+            const swatches = document.querySelectorAll('#custom-preset-swatches .preset-dot');
+            if (swatches[index]) swatches[index].style.background = hex;
+        }
+
+        function setTicketStyle(btn, style) {
+            settings.ticketStyle = style;
+            document.querySelectorAll('#opt-ticket-style .feedback-choice').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+        
+        function toggleDupes() {
+            settings.dupes = !settings.dupes;
+            document.getElementById('opt-dupes').classList.toggle('active', settings.dupes);
+        }
+
+        // --- THREE.JS INITIALIZATION ---
+        let trayGeo, baseGeoSq, baseGeoRRight, baseGeoRLeft, topGeoSq, topGeoRRight, topGeoRLeft, fanBaseGeo, fanTopGeo;
+        let whiteBaseMat, whiteTopMat, redTopMat, goldBaseMat, goldTopMat;
+        const ticketTextureCache = new Map();
+
+        function initGeometries() {
+            whiteBaseMat = new THREE.MeshStandardMaterial({ color: 0xd7d3e8, roughness: 0.38, emissive:0x5d5574, emissiveIntensity:0.08 });
+            whiteTopMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.24, emissive:0xffffff, emissiveIntensity:0.10 });
+            redTopMat = new THREE.MeshStandardMaterial({ color: 0xff315f, roughness: 0.24, emissive:0x8f102d, emissiveIntensity:0.16 });
+            goldBaseMat = new THREE.MeshStandardMaterial({ color: 0xcc9900, roughness: 0.3, metalness: 0.7 });
+            goldTopMat = new THREE.MeshStandardMaterial({ color: 0xffd700, roughness: 0.1, metalness: 0.9 });
+
+            function getBlockGeometry(isRounded, isRightSide, depth) {
+                const w = 1.15, h = 1.15, r = 0.575;
+                const shape = new THREE.Shape();
+                if (!isRounded) {
+                    shape.moveTo(-w/2, -h/2); shape.lineTo(w/2, -h/2); shape.lineTo(w/2, h/2); shape.lineTo(-w/2, h/2);
+                } else if (isRightSide) {
+                    shape.moveTo(-w/2, -h/2); shape.lineTo(0, -h/2); shape.absarc(0, 0, r, -Math.PI/2, Math.PI/2, false); shape.lineTo(-w/2, h/2);
+                } else {
+                    shape.moveTo(w/2, -h/2); shape.lineTo(0, -h/2); shape.absarc(0, 0, r, -Math.PI/2, -Math.PI*1.5, true); shape.lineTo(w/2, h/2);
+                }
+                const geo = new THREE.ExtrudeGeometry(shape, { depth: depth, bevelEnabled: false });
+                geo.center(); return geo;
+            }
+
+            baseGeoSq = getBlockGeometry(false, false, 0.08); baseGeoRRight = getBlockGeometry(true, true, 0.08); baseGeoRLeft = getBlockGeometry(true, false, 0.08);
+            topGeoSq = getBlockGeometry(false, false, 0.06); topGeoRRight = getBlockGeometry(true, true, 0.06); topGeoRLeft = getBlockGeometry(true, false, 0.06);
+
+            function getFanCardGeometry(depth) {
+                // Rounded tapered card: narrow end stays tucked toward the tray, wide end fans outward.
+                // Quadratic corners keep the flash-card silhouette soft and playful even at steep angles.
+                const w = 1.72, innerH = 0.52, outerH = 1.18;
+                const xIn = -w/2, xOut = w/2;
+                const rIn = 0.14, rOut = 0.20;
+                const s = new THREE.Shape();
+                s.moveTo(xIn + rIn, -innerH/2);
+                s.lineTo(xOut - rOut, -outerH/2);
+                s.quadraticCurveTo(xOut, -outerH/2, xOut, -outerH/2 + rOut);
+                s.lineTo(xOut, outerH/2 - rOut);
+                s.quadraticCurveTo(xOut, outerH/2, xOut - rOut, outerH/2);
+                s.lineTo(xIn + rIn, innerH/2);
+                s.quadraticCurveTo(xIn, innerH/2, xIn, innerH/2 - rIn);
+                s.lineTo(xIn, -innerH/2 + rIn);
+                s.quadraticCurveTo(xIn, -innerH/2, xIn + rIn, -innerH/2);
+                s.closePath();
+                const geo = new THREE.ExtrudeGeometry(s, {
+                    depth, bevelEnabled:true, bevelSegments:4,
+                    bevelSize:0.055, bevelThickness:0.032, curveSegments:10
+                });
+                geo.center(); return geo;
+            }
+            fanBaseGeo = getFanCardGeometry(0.09);
+            fanTopGeo = getFanCardGeometry(0.055);
+        }
+
+        function resizeCameraForMobile() {
+            if(!camera) return;
+            camera.aspect = window.innerWidth / window.innerHeight;
+            if (window.innerWidth < 768) {
+                camera.fov = 55 + (settings.length * 1.5);
+            } else {
+                camera.fov = 45;
+            }
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function initWebGL() {
+            if(scene) return;
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x1b143c, 0.007);
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 150);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.body.appendChild(renderer.domElement);
+
+            scene.add(new THREE.AmbientLight(0xffffff, 2.0)); 
+            
+            const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+            dirLight.position.set(5, 15, 8);
+            dirLight.castShadow = true;
+            dirLight.shadow.mapSize.width = 1024;
+            dirLight.shadow.mapSize.height = 1024;
+            dirLight.shadow.bias = -0.0005;
+            scene.add(dirLight);
+
+            initGeometries();
+            resizeCameraForMobile();
+            animate();
+        }
+
+        function getActiveMaterial(hex) {
+            const base = new THREE.Color(hex);
+            const isWhite = hex === 0xffffff || hex === 0xf8f6ff;
+            const emissive = base.clone().multiplyScalar(isWhite ? 0.012 : 0.020);
+            return new THREE.MeshPhysicalMaterial({
+                color: base, roughness: isWhite ? 0.25 : 0.17, metalness: 0.0,
+                clearcoat: 1.0, clearcoatRoughness: 0.055, reflectivity: 0.72,
+                emissive, emissiveIntensity: isWhite ? 0.08 : 0.14
+            });
+        }
+
+        let ballHighlightTexture = null, ballShadeTexture = null;
+        function makeSoftDiscTexture(kind) {
+            const c = document.createElement('canvas'); c.width = 128; c.height = 128;
+            const ctx = c.getContext('2d');
+            if (kind === 'highlight') {
+                const g = ctx.createRadialGradient(55, 43, 1, 62, 59, 40);
+                g.addColorStop(0, 'rgba(255,255,255,1)');
+                g.addColorStop(.16, 'rgba(255,255,255,.88)');
+                g.addColorStop(.48, 'rgba(255,255,255,.18)');
+                g.addColorStop(1, 'rgba(255,255,255,0)');
+                ctx.fillStyle = g;
+            } else {
+                // White alpha texture; the sprite itself is tinted from the marble color.
+                const g = ctx.createRadialGradient(66, 68, 3, 64, 64, 52);
+                g.addColorStop(0, 'rgba(255,255,255,.40)');
+                g.addColorStop(.46, 'rgba(255,255,255,.16)');
+                g.addColorStop(1, 'rgba(255,255,255,0)');
+                ctx.fillStyle = g;
+            }
+            ctx.fillRect(0,0,128,128);
+            const tex = new THREE.CanvasTexture(c); tex.needsUpdate = true; return tex;
+        }
+
+        function shadeColor(hex) {
+            const c = new THREE.Color(hex);
+            // Colored depth, never black: keeps the marble readable without the dark center spot.
+            c.offsetHSL(0, 0.03, -0.16);
+            return c;
+        }
+
+        function addBallAccents(sphere, hex) {
+            if (!ballHighlightTexture) ballHighlightTexture = makeSoftDiscTexture('highlight');
+            if (!ballShadeTexture) ballShadeTexture = makeSoftDiscTexture('shade');
+            const shade = new THREE.Sprite(new THREE.SpriteMaterial({
+                map: ballShadeTexture, color:shadeColor(hex), transparent:true, depthWrite:false, depthTest:false, opacity:.24
+            }));
+            shade.userData.ballAccent = 'shade';
+            shade.position.set(.19, -.22, .74); shade.scale.set(.78, .48, 1); shade.renderOrder = 25;
+            const hi = new THREE.Sprite(new THREE.SpriteMaterial({ map: ballHighlightTexture, transparent:true, depthWrite:false, depthTest:false, opacity:.96 }));
+            hi.userData.ballAccent = 'highlight';
+            hi.position.set(-.27, .30, .79); hi.scale.set(.29, .20, 1); hi.renderOrder = 26;
+            sphere.add(shade, hi);
+        }
+
+        function applyBallColor(sphere, hex) {
+            if (sphere.material && sphere.material.dispose) sphere.material.dispose();
+            sphere.material = getActiveMaterial(hex);
+            sphere.children.forEach(child => {
+                if (child.userData && child.userData.ballAccent === 'shade' && child.material) {
+                    child.material.color.copy(shadeColor(hex));
+                }
+            });
+        }
+
+        function createTicketFaceMaterial(kind, index) {
+            const key = `${kind}-${index}-${settings.length}`;
+            if (ticketTextureCache.has(key)) return ticketTextureCache.get(key).clone();
+            const c = document.createElement('canvas'); c.width = 256; c.height = 256;
+            const ctx = c.getContext('2d');
+            const t = settings.length <= 1 ? 0 : index / (settings.length - 1);
+
+            // Deliberate value ladder: ticket 1 is the lowest value and the highest number is the brightest.
+            // The ramp is subtle enough to remain one family, but strong enough to read when cards overlap.
+            const grad = ctx.createLinearGradient(12, 232, 244, 20);
+            if (kind === 'exact') {
+                const lowA = new THREE.Color(0xaaa3cc), hiA = new THREE.Color(0xf8f7ff);
+                const lowB = new THREE.Color(0xc7c1e8), hiB = new THREE.Color(0xffffff);
+                const a = lowA.clone().lerp(hiA, t);
+                const b = lowB.clone().lerp(hiB, t);
+                grad.addColorStop(0, `#${a.getHexString()}`);
+                grad.addColorStop(.58, `#${b.getHexString()}`);
+                grad.addColorStop(1, t > .72 ? '#ffffff' : '#f4f1ff');
+            } else {
+                const lowA = new THREE.Color(0x9f173e), hiA = new THREE.Color(0xff4e76);
+                const lowB = new THREE.Color(0xc62655), hiB = new THREE.Color(0xffa0b8);
+                const a = lowA.clone().lerp(hiA, t);
+                const b = lowB.clone().lerp(hiB, t);
+                grad.addColorStop(0, `#${a.getHexString()}`);
+                grad.addColorStop(.60, `#${b.getHexString()}`);
+                grad.addColorStop(1, t > .72 ? '#ffc2d1' : '#ff91ae');
+            }
+            ctx.fillStyle = grad; ctx.fillRect(0,0,256,256);
+
+            // Soft glass highlight plus a faint numbered-band edge that helps stacked cards separate.
+            const shine = ctx.createLinearGradient(0,0,0,112);
+            shine.addColorStop(0,'rgba(255,255,255,.50)');
+            shine.addColorStop(.42,'rgba(255,255,255,.13)');
+            shine.addColorStop(1,'rgba(255,255,255,0)');
+            ctx.fillStyle = shine; ctx.fillRect(0,0,256,116);
+            ctx.strokeStyle = kind === 'exact' ? `rgba(84,68,142,${0.16 + t*.13})` : `rgba(111,12,48,${0.18 + t*.12})`;
+            ctx.lineWidth = 10; ctx.strokeRect(5,5,246,246);
+
+            const tex = new THREE.CanvasTexture(c);
+            tex.minFilter = THREE.LinearFilter; tex.magFilter = THREE.LinearFilter;
+            const mat = new THREE.MeshStandardMaterial({
+                map:tex, roughness:.25, metalness:.015,
+                emissive:kind==='exact'?0x27203e:0x3b0718,
+                emissiveIntensity:.055 + t*.025
+            });
+            ticketTextureCache.set(key, mat);
+            return mat.clone();
+        }
+
+        function createBadgePlane(num, isDarkText, index = 0) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256; canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0,0,256,256);
+            const exactTicket = isDarkText;
+            const t = settings.length <= 1 ? 0 : index / (settings.length - 1);
+
+            // Large, crisp number chip. Its value also lifts slightly with the ticket number.
+            ctx.beginPath(); ctx.arc(128,128,88,0,Math.PI*2);
+            const chipLow = exactTicket ? new THREE.Color(0x231942) : new THREE.Color(0x56132e);
+            const chipHigh = exactTicket ? new THREE.Color(0x493b7c) : new THREE.Color(0x8f1d48);
+            ctx.fillStyle = `#${chipLow.clone().lerp(chipHigh,t*.65).getHexString()}`;
+            ctx.shadowColor = 'rgba(15,8,35,.40)'; ctx.shadowBlur = 13; ctx.shadowOffsetY = 5; ctx.fill();
+            ctx.shadowColor = 'transparent';
+            ctx.lineWidth = 9;
+            ctx.strokeStyle = exactTicket ? `rgba(255,255,255,${.48+t*.30})` : `rgba(255,244,249,${.52+t*.28})`;
+            ctx.stroke();
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.font = "900 154px 'Baloo 2', sans-serif";
+            ctx.lineJoin = 'round';
+            ctx.strokeStyle = 'rgba(0,0,0,.16)'; ctx.lineWidth = 9;
+            ctx.strokeText(num, 128, 144);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(num, 128, 144);
+
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.minFilter = THREE.LinearFilter; tex.magFilter = THREE.LinearFilter;
+            const mat = new THREE.MeshBasicMaterial({ map: tex, transparent:true, depthWrite:false, depthTest:false, toneMapped:false });
+            const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1.10,1.10), mat);
+            mesh.renderOrder = 140 + index;
+            return mesh;
+        }
+
+        function updateRowHighlight() {
+            trayMats.forEach((mat, idx) => {
+                if (idx === currentRow && (gameState === 'PLAYING' || gameState === 'P1_SETTING')) {
+                    mat.emissive.setHex(gameState === 'P1_SETTING' ? 0x145b68 : 0x3a2685);
+                    mat.emissiveIntensity = gameState === 'P1_SETTING' ? 0.85 : 0.62;
+                } else {
+                    mat.emissive.setHex(0x000000);
+                    mat.emissiveIntensity = 0;
+                }
+            });
+        }
+
+        function buildBoard() {
+            const toRemove = [];
+            scene.traverse(child => { if(child.isMesh) toRemove.push(child); });
+            toRemove.forEach(m => scene.remove(m));
+
+            guessSpheres = []; activeTicketBlocks = []; slideTickets = []; trayMats = [];
+
+            const colSpacing = 2.0;
+            const totalWidth = (settings.length - 1) * colSpacing;
+            const isFanFeedback = settings.ticketStyle === 'fan';
+            const ticketScale = isFanFeedback ? 1.0 : 0.80;
+            // Pull segments overlap by a hair so they read as one continuous strip.
+            const ticketStep = isFanFeedback ? 0.48 : (1.15 * ticketScale - 0.035);
+            const feedbackLane = isFanFeedback ? 5.05 : (settings.length * ticketStep + 0.86);
+            const boardWidth = totalWidth + (feedbackLane * 2) + 2.45;
+            const boardHeight = settings.tries * rowSpacing + 10;
+
+            // Wider neon-edged board: feedback tickets now stay inside this container.
+            const boardMat = new THREE.MeshStandardMaterial({ color: 0x22174a, roughness: 0.55, metalness: 0.06, emissive: 0x09031b, emissiveIntensity: 0.45 });
+            const board = new THREE.Mesh(new THREE.BoxGeometry(boardWidth, boardHeight, 2), boardMat);
+            board.position.set(0, (settings.tries * rowSpacing) / 2 - 2, -1.2);
+            board.receiveShadow = true;
+            scene.add(board);
+
+            // Slim illuminated rails make the playable container read clearly.
+            const railGeo = new THREE.BoxGeometry(0.10, boardHeight - 1.4, 0.11);
+            const railMat = new THREE.MeshBasicMaterial({ color: 0x6f58ff, transparent: true, opacity: 0.52 });
+            [-1, 1].forEach(side => {
+                const rail = new THREE.Mesh(railGeo, railMat);
+                rail.position.set(side * (boardWidth / 2 - 0.18), board.position.y, -0.10);
+                scene.add(rail);
+            });
+
+            // Tighter row container dimensions
+            const trayShape = new THREE.Shape();
+            const pw = totalWidth, pr = 1.0; 
+            trayShape.moveTo(-pw/2, -pr); trayShape.lineTo(pw/2, -pr); trayShape.absarc(pw/2, 0, pr, -Math.PI/2, Math.PI/2, false);
+            trayShape.lineTo(-pw/2, pr); trayShape.absarc(-pw/2, 0, pr, Math.PI/2, Math.PI * 1.5, false);
+            trayGeo = new THREE.ExtrudeGeometry(trayShape, { depth: 0.12, bevelEnabled: true, bevelSegments: 2, bevelSize: 0.04, bevelThickness: 0.04 });
+            trayGeo.center();
+
+            const slotGeo = new THREE.CylinderGeometry(0.8, 0.8, 0.1, 32);
+            const slotMat = new THREE.MeshStandardMaterial({ color: 0x160f33, roughness: 0.9 });
+            const sphereGeo = new THREE.SphereGeometry(0.75, 32, 32);
+
+            for (let row = 0; row < settings.tries; row++) {
+                let yPos = row * rowSpacing;
+                
+                let trayMat = new THREE.MeshStandardMaterial({ color: 0x2c1f5e, roughness: 0.6, emissive: 0x000000 });
+                trayMats.push(trayMat);
+
+                let tray = new THREE.Mesh(trayGeo, trayMat);
+                tray.position.set(0, yPos, 0.25); tray.receiveShadow = true; scene.add(tray); 
+
+                let rowSpheres = [];
+                for (let col = 0; col < settings.length; col++) {
+                    let xPos = col * colSpacing - totalWidth / 2;
+                    let slot = new THREE.Mesh(slotGeo, slotMat);
+                    slot.rotation.x = Math.PI / 2; slot.position.set(xPos, yPos, 0.32); 
+                    slot.userData = { isSlot: true, row: row, col: col };
+                    scene.add(slot);
+
+                    let sphere = new THREE.Mesh(sphereGeo, getActiveMaterial(ACTIVE_COLORS[0]));
+                    addBallAccents(sphere, ACTIVE_COLORS[0]);
+                    sphere.position.copy(slot.position); sphere.position.z = 0.50; sphere.castShadow = true;
+                    sphere.visible = false;
+                    sphere.userData = { isSphere: true, row: row, col: col };
+                    scene.add(sphere); rowSpheres.push(sphere);
+                }
+                guessSpheres.push(rowSpheres);
+
+                let whiteBlocks = [], redBlocks = [];
+                for(let i=0; i<settings.length; i++) {
+                    const baseGeometry = isFanFeedback ? fanBaseGeo : baseGeoSq;
+                    const topGeometry = isFanFeedback ? fanTopGeo : topGeoSq;
+
+                    let wBase = new THREE.Mesh(baseGeometry, whiteBaseMat);
+                    let wTop = new THREE.Mesh(topGeometry, createTicketFaceMaterial('exact', i)); wTop.position.z = 0.075;
+                    let wText = createBadgePlane((i+1).toString(), true, i);
+                    wText.position.set(isFanFeedback ? 0.49 : -0.08, 0, 0.175);
+                    wText.material.depthTest = false; wText.renderOrder = 140 + i;
+                    if (isFanFeedback) wText.scale.set(.88,.88,.88);
+                    wTop.add(wText); wBase.add(wTop);
+                    wBase.position.set(0, yPos, 0.22); wBase.scale.set(ticketScale, ticketScale, ticketScale);
+                    wBase.visible = false; wBase.castShadow = true; scene.add(wBase); whiteBlocks.push(wBase);
+
+                    let rBase = new THREE.Mesh(baseGeometry, whiteBaseMat);
+                    let rTop = new THREE.Mesh(topGeometry, createTicketFaceMaterial('misplaced', i)); rTop.position.z = 0.075;
+                    let rText = createBadgePlane((i+1).toString(), false, i);
+                    rText.position.set(isFanFeedback ? 0.49 : 0.08, 0, 0.175);
+                    rText.material.depthTest = false; rText.renderOrder = 140 + i;
+                    if (isFanFeedback) rText.scale.set(.88,.88,.88);
+                    rTop.add(rText); rBase.add(rTop);
+                    rBase.position.set(0, yPos, 0.22); rBase.scale.set(ticketScale, ticketScale, ticketScale);
+                    rBase.visible = false; rBase.castShadow = true; scene.add(rBase); redBlocks.push(rBase);
+                }
+                slideTickets.push({ whiteBlocks, redBlocks, totalW: totalWidth, ticketScale, ticketStep, boardWidth, style: settings.ticketStyle });
+            }
+        }
+
+        // --- GAME LOGIC ---
+        function updateTurnPill() {
+            const pill = document.getElementById('turn-pill');
+            if (!pill) return;
+            if (gameState === 'P1_SETTING') pill.innerText = 'SECRET CODE';
+            else if (gameState === 'OVER') pill.innerText = 'ROUND COMPLETE';
+            else pill.innerText = `TRY ${Math.min(currentRow + 1, settings.tries)} / ${settings.tries}`;
+        }
+
+        function generateCode() {
+            let code = [];
+            if (settings.dupes) {
+                for(let i=0; i<settings.length; i++) code.push(Math.floor(Math.random() * settings.colors));
+            } else {
+                let pool = [...Array(settings.colors).keys()];
+                for(let i=0; i<settings.length; i++) {
+                    let idx = Math.floor(Math.random() * pool.length);
+                    code.push(pool[idx]);
+                    pool.splice(idx, 1);
+                }
+            }
+            return code;
+        }
+
+        function startGame(mode) {
+            gameMode = mode;
+            const selectedSet = settings.palette === 'custom'
+                ? { colors:CUSTOM_COLORS, css:CUSTOM_CSS }
+                : (COLOR_SETS[settings.palette] || COLOR_SETS.signature);
+            ACTIVE_COLORS = selectedSet.colors.slice(0, settings.colors);
+            ACTIVE_CSS = selectedSet.css.slice(0, settings.colors);
+
+            const paletteBar = document.getElementById('palette-bar');
+            paletteBar.innerHTML = '';
+            paletteBar.classList.add('palette-docked');
+            paletteBar.classList.toggle('palette-near-row', mode === 2);
+            paletteBar.style.left = '50%';
+            paletteBar.style.top = mode === 2 ? '50%' : '20px';
+            paletteBar.style.transform = 'translateX(-50%)';
+            for(let i=0; i<settings.colors; i++){
+                const rgb = new THREE.Color(ACTIVE_COLORS[i]); const light = (rgb.r + rgb.g + rgb.b) / 3 > 0.82;
+                paletteBar.innerHTML += `<div class="palette-color" data-light="${light}" data-color-index="${i}" style="background:${ACTIVE_CSS[i]}" title="Color ${i+1}"></div>`;
+            }
+
+            currentRow = 0; 
+            currentGuess = Array(settings.length).fill(-1);
+            guessHistory = []; 
+            
+            document.getElementById('history-list').innerHTML = '';
+            document.getElementById('submit-btn').disabled = false;
+            
+            cameraCurrentY = 0; cameraTargetY = 0;
+            activeTicketBlocks = [];
+
+            initWebGL();
+            buildBoard();
+            
+            if(gameMode === 1) {
+                targetCode = generateCode();
+                gameState = 'PLAYING';
+                document.getElementById('submit-label').innerText = "CHECK";
+            } else {
+                gameState = 'P1_SETTING';
+                document.getElementById('submit-label').innerText = "SET CODE";
+            }
+
+            updateRowHighlight();
+            updateTurnPill();
+            updateCopyLastButton();
+            document.getElementById('landing-screen').style.display = 'none';
+            document.getElementById('game-ui').style.display = 'block';
+        }
+
+        function startPlayer2() {
+            document.getElementById('transition-screen').style.display = 'none';
+            document.getElementById('game-ui').style.display = 'block';
+            gameState = 'PLAYING';
+            const paletteBar = document.getElementById('palette-bar');
+            paletteBar.classList.remove('palette-near-row');
+            paletteBar.classList.add('palette-docked');
+            paletteBar.style.left = '50%'; paletteBar.style.top = '20px'; paletteBar.style.transform = 'translateX(-50%)';
+            document.getElementById('submit-label').innerText = "CHECK";
+            updateRowHighlight();
+            updateTurnPill();
+            updateCopyLastButton();
+        }
+
+        function backToMenu() {
+            gameState = 'LANDING';
+            document.getElementById('game-ui').style.display = 'none';
+            document.getElementById('transition-screen').style.display = 'none';
+            document.getElementById('landing-screen').style.display = 'flex';
+            updateCopyLastButton();
+        }
+
+        document.getElementById('submit-btn').addEventListener('click', () => {
+            if (gameState === 'OVER' || gameState === 'ANIMATING') return;
+
+            if (currentGuess.includes(-1)) {
+                showStatus("FILL ALL SLOTS!", "#ff9f1c");
+                return;
+            }
+
+            if (gameState === 'P1_SETTING') {
+                if (!settings.dupes && new Set(currentGuess).size !== currentGuess.length) {
+                    showStatus("NO DUPLICATES ALLOWED!", "#ff3b5c"); return;
+                }
+                targetCode = [...currentGuess];
+                document.getElementById('game-ui').style.display = 'none';
+                document.getElementById('transition-screen').style.display = 'flex';
+                
+                currentGuess = Array(settings.length).fill(-1);
+                for (let col = 0; col < settings.length; col++) {
+                    let sphere = guessSpheres[0][col];
+                    sphere.visible = false;
+                }
+                return;
+            }
+
+            // --- ANIMATION LOCK START ---
+            gameState = 'ANIMATING';
+            document.getElementById('submit-btn').disabled = true;
+            updateRowHighlight();
+            guessHistory[currentRow] = [...currentGuess];
+            updateCopyLastButton();
+
+            let exact = 0, colorMatch = 0;
+            let targetCopy = [...targetCode], guessCopy = [...currentGuess];
+
+            for (let i = 0; i < settings.length; i++) {
+                if (guessCopy[i] === targetCopy[i]) { exact++; targetCopy[i] = -1; guessCopy[i] = -2; }
+            }
+            for (let i = 0; i < settings.length; i++) {
+                for (let j = 0; j < settings.length; j++) {
+                    if (guessCopy[i] === targetCopy[j]) { colorMatch++; targetCopy[j] = -1; break; }
+                }
+            }
+
+            const yPos = currentRow * rowSpacing;
+            let ticket = slideTickets[currentRow];
+            const trayEdge = ticket.totalW / 2 + 1.02;
+            let isWin = (exact === settings.length);
+
+            let baseDelay = 8;
+            if (ticket.style === 'fan') {
+                // FAN WEDGES: tapered trapezoids radiate from a single side anchor.
+                // FAN CARDS: tapered cards all point back to one shared row-edge anchor.
+                // Their centers spread along a wide arc and the badge sits toward the outer edge, so every number stays readable.
+                const fanTicket = (block, i, count, side, isGolden) => {
+                    // More open radial stack: number 1 sits lowest/closest, highest number sits highest,
+                    // brighter, larger and physically above the cards below it.
+                    const spread = count <= 1 ? 0 : Math.min(1.06, 0.48 + count * 0.115);
+                    const ratio = count <= 1 ? 0.5 : i / (count - 1);
+                    const localAngle = count <= 1 ? 0 : (-spread + ratio * spread * 2);
+                    const startRot = side > 0 ? 0 : Math.PI;
+                    const targetRot = side > 0 ? localAngle : Math.PI - localAngle;
+                    const sizeRange = Math.max(1, settings.length - 1);
+                    const targetScale = 0.70 + (i / sizeRange) * 0.50;
+                    const anchorX = side * (trayEdge - 0.015);
+                    const halfCardLength = 1.72 * 0.5 * targetScale;
+                    const distance = halfCardLength + 0.20 + i * 0.075;
+                    const targetX = anchorX + Math.cos(targetRot) * distance;
+                    const targetY = yPos + Math.sin(targetRot) * distance;
+                    const layerZ = 0.31 + i * 0.095;
+                    block.geometry = fanBaseGeo;
+                    block.children[0].geometry = fanTopGeo;
+                    block.position.set(anchorX, yPos, 0.30 + i * 0.025);
+                    block.rotation.z = startRot;
+                    block.renderOrder = 30 + i;
+                    if (block.children[0]) block.children[0].renderOrder = 60 + i;
+                    const badge = block.children[0] && block.children[0].children[0];
+                    if (badge) { badge.rotation.z = -startRot; badge.renderOrder = 150 + i; }
+                    block.scale.set(0.055, 0.055, targetScale);
+                    block.visible = true;
+                    block.userData = {
+                        style:'fan', targetX, targetY, targetRot, startRot, startX:anchorX, startY:yPos,
+                        startZ:0.30 + i * 0.025, targetZ:layerZ,
+                        reveal:0, baseScale:targetScale, delay:baseDelay + i * 8, phase:'wait',
+                        isGolden, goldApplied:false, sparkled:false
+                    };
+                    activeTicketBlocks.push(block);
+                };
+                for (let i=0; i<exact; i++) fanTicket(ticket.whiteBlocks[i], i, exact, -1, isWin);
+                for (let i=0; i<colorMatch; i++) fanTicket(ticket.redBlocks[i], i, colorMatch, 1, false);
+            } else {
+                // PULL TABS: the full-size strip begins underneath the active tray, then slides out
+                // like paper being physically pulled from under the container. Adjacent pieces overlap slightly.
+                const pullHalf = (1.15 * ticket.ticketScale) / 2;
+                for(let i=0; i<exact; i++) {
+                    const isOuter = (i === exact - 1);
+                    const block = ticket.whiteBlocks[i];
+                    block.geometry = isOuter ? baseGeoRLeft : baseGeoSq;
+                    block.children[0].geometry = isOuter ? topGeoRLeft : topGeoSq;
+                    const targetX = -trayEdge - pullHalf + 0.07 - (i * ticket.ticketStep);
+                    const startX = -trayEdge + pullHalf + 0.18;
+                    block.position.set(startX, yPos, -0.07 - i*0.002);
+                    block.rotation.z = 0;
+                    block.renderOrder = 30 + i;
+                    if (block.children[0]) block.children[0].renderOrder = 60 + i;
+                    const badge = block.children[0] && block.children[0].children[0];
+                    if (badge) badge.renderOrder = 150 + i;
+                    block.scale.set(ticket.ticketScale, ticket.ticketScale, ticket.ticketScale);
+                    block.visible = true;
+                    block.userData = {
+                        style:'pull', targetX, targetY:yPos, startY:yPos, startX, startZ:-0.07-i*0.002, targetZ:0.18+i*0.012,
+                        reveal:0, baseScale:ticket.ticketScale, delay:baseDelay + i * 7, phase:'wait', isGolden:isWin, goldApplied:false
+                    };
+                    activeTicketBlocks.push(block);
+                }
+                for(let i=0; i<colorMatch; i++) {
+                    const isOuter = (i === colorMatch - 1);
+                    const block = ticket.redBlocks[i];
+                    block.geometry = isOuter ? baseGeoRRight : baseGeoSq;
+                    block.children[0].geometry = isOuter ? topGeoRRight : topGeoSq;
+                    const targetX = trayEdge + pullHalf - 0.07 + (i * ticket.ticketStep);
+                    const startX = trayEdge - pullHalf - 0.18;
+                    block.position.set(startX, yPos, -0.07 - i*0.002);
+                    block.rotation.z = 0;
+                    block.renderOrder = 30 + i;
+                    if (block.children[0]) block.children[0].renderOrder = 60 + i;
+                    const badge = block.children[0] && block.children[0].children[0];
+                    if (badge) badge.renderOrder = 150 + i;
+                    block.scale.set(ticket.ticketScale, ticket.ticketScale, ticket.ticketScale);
+                    block.visible = true;
+                    block.userData = {
+                        style:'pull', targetX, targetY:yPos, startY:yPos, startX, startZ:-0.07-i*0.002, targetZ:0.18+i*0.012,
+                        reveal:0, baseScale:ticket.ticketScale, delay:baseDelay + (exact + i) * 7, phase:'wait', isGolden:false, goldApplied:false
+                    };
+                    activeTicketBlocks.push(block);
+                }
+            }
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'history-row';
+            let htmlColors = `<div class="history-colors">`;
+            currentGuess.forEach(cIdx => { htmlColors += `<div class="history-dot" style="background:${ACTIVE_CSS[cIdx]}"></div>`; });
+            htmlColors += `</div>`;
+            rowDiv.innerHTML = `<div class="hist-badge exact">${exact}</div> ${htmlColors} <div class="hist-badge close">${colorMatch}</div>`;
+            document.getElementById('history-list').prepend(rowDiv);
+
+            let maxFrames = baseDelay + (exact + colorMatch) * (ticket.style === 'fan' ? 7 : 8) + 42;
+            let totalWaitTime = maxFrames * 16.6; 
+
+            setTimeout(() => {
+                if (exact === settings.length) {
+                    showStatus("CODE CRACKED!", "#ffd700");
+                    for (let k = 0; k < settings.colors; k++) spawnBurst(new THREE.Vector3((Math.random() - 0.5) * 4, yPos, 1), ACTIVE_COLORS[k], 40, 8);
+                    gameState = 'OVER'; updateTurnPill(); updateCopyLastButton();
+                } else {
+                    currentRow++;
+                    if (currentRow >= settings.tries) {
+                        showStatus("GAME OVER", "#ff3b5c");
+                        gameState = 'OVER'; updateTurnPill(); updateCopyLastButton();
+                    } else {
+                        currentGuess = Array(settings.length).fill(-1);
+                        cameraTargetY = currentRow * rowSpacing;
+                        gameState = 'PLAYING';
+                        document.getElementById('submit-btn').disabled = false;
+                        updateRowHighlight();
+                        updateTurnPill();
+                        updateCopyLastButton();
+                    }
+                }
+            }, totalWaitTime);
+        });
+
+        function updateCopyLastButton() {
+            const btn = document.getElementById('copy-last-btn');
+            if (!btn) return;
+            const canCopy = gameState === 'PLAYING' && currentRow > 0 && Array.isArray(guessHistory[currentRow - 1]);
+            btn.style.display = canCopy ? 'flex' : 'none';
+            btn.disabled = !canCopy;
+        }
+
+        function copyLastGuess() {
+            if (gameState !== 'PLAYING' || currentRow <= 0) return;
+            const previous = guessHistory[currentRow - 1];
+            if (!previous || previous.length !== settings.length) return;
+            currentGuess = [...previous];
+            for (let col = 0; col < settings.length; col++) {
+                const sphere = guessSpheres[currentRow][col];
+                applyBallColor(sphere, ACTIVE_COLORS[currentGuess[col]]);
+                sphere.visible = true;
+                sphere.position.z = 0.34;
+                sphere.scale.set(.92,.92,.92);
+                setTimeout(() => {
+                    if (sphere && sphere.visible) { sphere.position.z = 0.5; sphere.scale.set(1,1,1); }
+                }, 55 + col * 34);
+            }
+            showStatus('LAST GUESS COPIED • EDIT ANY COLOR', '#725cff');
+        }
+
+        function positionCopyLastButton() {
+            const btn = document.getElementById('copy-last-btn');
+            if (!btn || btn.style.display === 'none' || !camera) return;
+            const rowHalfWidth = ((settings.length - 1) * 2.0) / 2 + 1.0;
+            const anchor = new THREE.Vector3(rowHalfWidth + 0.72, currentRow * rowSpacing - 0.54, 0.95).project(camera);
+            let x = (anchor.x * .5 + .5) * window.innerWidth;
+            let y = (-anchor.y * .5 + .5) * window.innerHeight;
+            const half = Math.max(48, btn.offsetWidth / 2);
+            x = Math.max(half + 8, Math.min(window.innerWidth - half - 8, x));
+            y = Math.max(82, Math.min(window.innerHeight - 76, y));
+            btn.style.left = `${x}px`; btn.style.top = `${y}px`;
+        }
+
+        function positionPaletteNearActiveRow() {
+            if (!camera || (gameState !== 'P1_SETTING' && gameState !== 'PLAYING')) return;
+            const paletteBar = document.getElementById('palette-bar');
+            if (!paletteBar.classList.contains('palette-docked')) return;
+
+            // Anchor to the upper edge of the active tray so the dock feels physically attached to it.
+            const anchor = new THREE.Vector3(0, currentRow * rowSpacing + 1.25, 0.82).project(camera);
+            const screenX = (anchor.x * 0.5 + 0.5) * window.innerWidth;
+            const screenY = (-anchor.y * 0.5 + 0.5) * window.innerHeight;
+            const paletteHalf = Math.min(paletteBar.offsetWidth / 2, window.innerWidth * 0.47);
+            const x = Math.max(paletteHalf + 9, Math.min(window.innerWidth - paletteHalf - 9, screenX));
+            const rowGap = gameState === 'P1_SETTING' ? 8 : 10;
+            const desiredTop = screenY - paletteBar.offsetHeight - rowGap;
+            const y = Math.max(58, Math.min(window.innerHeight - paletteBar.offsetHeight - 90, desiredTop));
+
+            paletteBar.style.left = `${x}px`;
+            paletteBar.style.top = `${y}px`;
+            paletteBar.style.transform = 'translateX(-50%)';
+        }
+
+        function showStatus(text, color) {
+            const overlay = document.getElementById('status-overlay');
+            overlay.innerText = text; overlay.style.color = '#fff'; overlay.style.background = color;
+            overlay.style.boxShadow = `0 8px 28px ${color}88`; overlay.style.opacity = 1; overlay.style.transform = 'translateX(-50%) scale(1)';
+            setTimeout(() => { overlay.style.opacity = 0; overlay.style.transform = 'translateX(-50%) scale(0.9)'; }, 3200);
+        }
+
+        // --- INTERACTION ---
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        let isCameraDragging = false, dragStartY = 0, dragDelta = 0;
+        let activeDragColorIndex = -1, dragGhostElement = null;
+
+        window.addEventListener('pointerdown', (e) => {
+            if (gameState !== 'PLAYING' && gameState !== 'P1_SETTING') return;
+            const paletteItem = e.target.closest('.palette-color');
+            if (paletteItem) {
+                activeDragColorIndex = parseInt(paletteItem.dataset.colorIndex);
+                dragGhostElement = document.createElement('div');
+                dragGhostElement.className = 'drag-ghost';
+                dragGhostElement.style.background = `radial-gradient(circle at 30% 22%, rgba(255,255,255,.95) 0 5%, transparent 6%), radial-gradient(circle at 68% 74%, rgba(20,8,54,.28), transparent 45%), ${ACTIVE_CSS[activeDragColorIndex]}`;
+                dragGhostElement.style.left = e.clientX + 'px'; dragGhostElement.style.top = e.clientY + 'px';
+                document.body.appendChild(dragGhostElement);
+                return; 
+            }
+            if (e.target.closest('#ui-left') || e.target.closest('#ui-right') || e.target.closest('#palette-bar') || e.target.closest('#btn-back') || e.target.closest('#copy-last-btn')) return;
+            isCameraDragging = true; dragStartY = e.clientY; dragDelta = 0;
+        });
+
+        window.addEventListener('pointermove', (e) => {
+            if (dragGhostElement) {
+                dragGhostElement.style.left = e.clientX + 'px'; dragGhostElement.style.top = e.clientY + 'px'; return;
+            }
+            if (!isCameraDragging) return;
+            dragDelta += Math.abs(e.clientY - dragStartY);
+            cameraTargetY += (e.clientY - dragStartY) * 0.04; dragStartY = e.clientY;
+            const maxY = settings.tries * rowSpacing;
+            if (cameraTargetY < 0) cameraTargetY = 0;
+            if (cameraTargetY > maxY) cameraTargetY = maxY;
+        });
+
+        window.addEventListener('pointerup', (e) => {
+            if (dragGhostElement) {
+                mouse.x = (e.clientX / window.innerWidth) * 2 - 1; mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObjects(scene.children);
+                for (let intersect of intersects) {
+                    let obj = intersect.object;
+                    if ((obj.userData.isSlot || obj.userData.isSphere) && obj.userData.row === currentRow) {
+                        let col = obj.userData.col;
+                        let sphere = guessSpheres[currentRow][col];
+                        
+                        applyBallColor(sphere, ACTIVE_COLORS[activeDragColorIndex]);
+                        sphere.visible = true;
+                        currentGuess[col] = activeDragColorIndex;
+                        
+                        sphere.position.z = 0.25; sphere.scale.set(1.15, 1.15, 1.15);
+                        setTimeout(() => { sphere.position.z = 0.5; sphere.scale.set(1, 1, 1); }, 100);
+                        break;
+                    }
+                }
+                dragGhostElement.remove(); dragGhostElement = null; activeDragColorIndex = -1; isCameraDragging = false; 
+                return; 
+            }
+
+            isCameraDragging = false;
+            if (dragDelta < 5 && (gameState === 'PLAYING' || gameState === 'P1_SETTING')) {
+                mouse.x = (e.clientX / window.innerWidth) * 2 - 1; mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+                raycaster.setFromCamera(mouse, camera);
+                for (let intersect of raycaster.intersectObjects(scene.children)) {
+                    let obj = intersect.object;
+                    if ((obj.userData.isSlot || obj.userData.isSphere) && obj.userData.row === currentRow) {
+                        let col = obj.userData.col;
+                        let sphere = guessSpheres[currentRow][col];
+                        
+                        let nextIndex = currentGuess[col] === -1 ? 0 : (currentGuess[col] + 1) % settings.colors;
+                        
+                        applyBallColor(sphere, ACTIVE_COLORS[nextIndex]);
+                        sphere.visible = true;
+                        currentGuess[col] = nextIndex;
+                        
+                        sphere.position.z = 0.25; sphere.scale.set(1.15, 1.15, 1.15);
+                        setTimeout(() => { sphere.position.z = 0.5; sphere.scale.set(1, 1, 1); }, 100);
+                        break;
+                    }
+                }
+            }
+        });
+
+        function spawnBurst(position, colorHex, count, speed) {
+            const geo = new THREE.BufferGeometry(); const pos = new Float32Array(count * 3); const vel = [];
+            for (let i = 0; i < count; i++) {
+                pos[i*3] = position.x; pos[i*3+1] = position.y; pos[i*3+2] = position.z;
+                const phi = Math.random() * Math.PI, theta = Math.random() * Math.PI * 2;
+                vel.push(new THREE.Vector3(Math.sin(phi) * Math.cos(theta), Math.abs(Math.cos(phi)) + 0.3, Math.sin(phi) * Math.sin(theta)).multiplyScalar(speed * (0.5 + Math.random()*0.7)));
+            }
+            geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+            const mat = new THREE.PointsMaterial({ color: colorHex, size: 0.24, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+            const pts = new THREE.Points(geo, mat); scene.add(pts);
+            activeParticles.push({ pts, vel, life: 1.0, geo, mat });
+        }
+
+        function animate() {
+            reqAnimFrameId = requestAnimationFrame(animate);
+            if(!scene) return;
+
+            cameraCurrentY += (cameraTargetY - cameraCurrentY) * 0.1;
+            
+            let camZ = window.innerWidth < 768 ? 30 : 18;
+            camera.position.set(0, cameraCurrentY - (window.innerWidth < 768 ? 16 : 12), camZ);
+            camera.lookAt(0, cameraCurrentY + 2, 0);
+
+            positionPaletteNearActiveRow();
+            positionCopyLastButton();
+
+            // Validation Blocks Tick & Spring Mechanics
+            for (let i = 0; i < activeTicketBlocks.length; i++) {
+                let b = activeTicketBlocks[i];
+                let d = b.userData;
+                if (!d || d.phase === undefined) continue;
+
+                if (d.phase === 'wait') {
+                    if (d.delay > 0) d.delay--;
+                    else d.phase = 'reveal';
+                } else if (d.phase === 'reveal') {
+                    d.reveal = Math.min(1, d.reveal + (d.style === 'fan' ? 0.095 : 0.115));
+                    // Back-out easing gives the tickets a tactile paper/card snap.
+                    const t = d.reveal;
+                    const c1 = 1.70158, c3 = c1 + 1;
+                    const eased = 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+
+                    if (d.style === 'fan') {
+                        b.position.x = d.startX + (d.targetX - d.startX) * eased;
+                        b.position.y = d.startY + (d.targetY - d.startY) * eased;
+                        if (d.startZ !== undefined) b.position.z = d.startZ + (d.targetZ - d.startZ) * Math.min(1,eased);
+                        b.rotation.z = d.startRot + (d.targetRot - d.startRot) * eased;
+                        const badge = b.children[0] && b.children[0].children[0];
+                        if (badge) badge.rotation.z = -b.rotation.z;
+                        const s = d.baseScale * Math.max(.05, eased);
+                        b.scale.set(s, s, d.baseScale);
+                    } else {
+                        const pullT = Math.min(1, eased);
+                        b.position.x = d.startX + (d.targetX - d.startX) * pullT;
+                        b.position.y = d.startY;
+                        const liftT = Math.max(0, (pullT - .42) / .58);
+                        b.position.z = d.startZ + (d.targetZ - d.startZ) * liftT;
+                        b.scale.set(d.baseScale, d.baseScale, d.baseScale);
+                    }
+
+                    if (d.reveal >= 1) {
+                        b.position.x = d.targetX;
+                        if (d.targetY !== undefined) b.position.y = d.targetY;
+                        if (d.targetZ !== undefined) b.position.z = d.targetZ;
+                        if (d.style === 'fan') {
+                            b.rotation.z = d.targetRot;
+                            const badge = b.children[0] && b.children[0].children[0];
+                            if (badge) badge.rotation.z = -d.targetRot;
+                        }
+                        b.scale.set(d.baseScale, d.baseScale, d.baseScale);
+                        d.phase = 'settled';
+                        if (d.style === 'fan' && !d.sparkled) {
+                            d.sparkled = true;
+                            spawnBurst(b.position.clone().add(new THREE.Vector3(0,0,.35)), b.children[0].material.color.getHex(), 5, 1.35);
+                        }
+                        if (d.isGolden && !d.goldApplied) {
+                            d.goldApplied = true;
+                            b.material = goldBaseMat;
+                            b.children[0].material = goldTopMat;
+                            spawnBurst(b.position.clone().add(new THREE.Vector3(0, 0, 0.5)), 0xffd700, 20, 3);
+                        }
+                    }
+                }
+            }
+
+            for (let i = activeParticles.length - 1; i >= 0; i--) {
+                const p = activeParticles[i]; p.life -= 0.02; const arr = p.geo.attributes.position.array;
+                for (let j = 0; j < p.vel.length; j++) {
+                    arr[j*3] += p.vel[j].x * 0.02; arr[j*3+1] += p.vel[j].y * 0.02; arr[j*3+2] += p.vel[j].z * 0.02;
+                    p.vel[j].y -= 0.18; 
+                }
+                p.geo.attributes.position.needsUpdate = true; p.mat.opacity = Math.max(p.life, 0);
+                if (p.life <= 0) { scene.remove(p.pts); p.geo.dispose(); p.mat.dispose(); activeParticles.splice(i, 1); }
+            }
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', resizeCameraForMobile);
+    </script>
+</body>
+</html>
