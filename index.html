@@ -173,15 +173,20 @@
         /* --- IN-GAME UI --- */
         #game-ui { display: none; }
 
-        #btn-back {
+        /* Top Left Controls */
+        #top-left-controls {
             position: absolute; top: 20px; left: 20px; z-index: 25;
+            display: flex; gap: 10px; flex-direction: column; align-items: flex-start;
+        }
+        
+        .top-btn {
             background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
             backdrop-filter: blur(8px); border-radius: 12px; padding: 10px 16px;
             color: #fff; font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600;
             cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s, background 0.4s ease, color 0.4s ease;
-            box-shadow: 0 10px 30px rgba(0,0,0,.2);
+            box-shadow: 0 10px 30px rgba(0,0,0,.2); outline: none;
         }
-        #btn-back:hover { background: rgba(255,255,255,0.2); }
+        .top-btn:hover { background: rgba(255,255,255,0.2); }
 
         /* TOGGLE HISTORY BUTTON */
         #toggle-history-btn {
@@ -335,6 +340,29 @@
             backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,.22); text-shadow: 0 2px 8px rgba(0,0,0,.35);
         }
 
+        /* SOLUTION OVERLAY */
+        #solution-overlay {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: linear-gradient(180deg, rgba(31,22,68,.95), rgba(19,13,45,.95));
+            padding: 30px 40px; border-radius: 20px; text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2); z-index: 100;
+            display: flex; flex-direction: column; align-items: center; gap: 15px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.7); backdrop-filter: blur(15px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        #solution-overlay.hidden {
+            opacity: 0; pointer-events: none; transform: translate(-50%, -40%);
+        }
+        #solution-title {
+            font-family: 'Baloo 2', sans-serif; font-size: 28px; font-weight: 900;
+            color: #ff3b5c; letter-spacing: 2px; text-shadow: 0 0 15px rgba(255,59,92,0.4);
+        }
+        #solution-colors { display: flex; gap: 12px; margin: 10px 0 20px; }
+        .solution-dot {
+            width: 36px; height: 36px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.8);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.3);
+        }
+        
         #transition-screen {
             position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 50; display: none;
             flex-direction: column; align-items: center; justify-content: center;
@@ -350,22 +378,16 @@
         }
         .btn-ready:hover { transform: translateY(-3px); box-shadow: 0 16px 36px rgba(0,229,255,.34); }
 
-
         /* --- LIGHT THEME --- */
-        body.light-theme {
-            background: radial-gradient(circle at 50% 0%, #f1f5f9 0%, #cbd5e1 80%);
-            color: #0f172a;
-        }
+        body.light-theme { background: radial-gradient(circle at 50% 0%, #f1f5f9 0%, #cbd5e1 80%); color: #0f172a; }
         body.light-theme #landing-screen { background: radial-gradient(circle at 50% -20%, #f8fafc 0%, #94a3b8 100%); }
         body.light-theme .hero-title {
             background: linear-gradient(180deg,#0f172a 12%,#334155 48%,#475569 100%);
-            -webkit-background-clip: text;
-            text-shadow: 0 0 20px rgba(255, 255, 255, 0.8), 0 0 40px rgba(0, 0, 0, 0.1);
+            -webkit-background-clip: text; text-shadow: 0 0 20px rgba(255, 255, 255, 0.8), 0 0 40px rgba(0, 0, 0, 0.1);
         }
         body.light-theme .hero-subtitle { color: #475569; }
         body.light-theme .settings-panel {
-            background: rgba(255, 255, 255, 0.65);
-            border: 1px solid rgba(0, 0, 0, 0.1); box-shadow: 0 24px 70px rgba(0,0,0,.08);
+            background: rgba(255, 255, 255, 0.65); border: 1px solid rgba(0, 0, 0, 0.1); box-shadow: 0 24px 70px rgba(0,0,0,.08);
         }
         body.light-theme .setting-row { border-color: rgba(0, 0, 0, 0.08); }
         body.light-theme .setting-label { color: #1e293b; }
@@ -380,8 +402,8 @@
         body.light-theme .toggle-switch.active { background: #00d4ec; box-shadow: 0 0 10px rgba(0, 229, 255, 0.3); }
         body.light-theme .preset-name small { background: #334155; color: #fff; }
         
-        body.light-theme #btn-back, body.light-theme #toggle-history-btn { background: rgba(255,255,255,0.85); border-color: rgba(0,0,0,0.1); color: #0f172a; }
-        body.light-theme #btn-back:hover, body.light-theme #toggle-history-btn:hover { background: #fff; }
+        body.light-theme .top-btn, body.light-theme #toggle-history-btn { background: rgba(255,255,255,0.85); border-color: rgba(0,0,0,0.1); color: #0f172a; }
+        body.light-theme .top-btn:hover, body.light-theme #toggle-history-btn:hover { background: #fff; }
         
         body.light-theme #ui-right { background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(241,245,249,0.92)); border-color: rgba(0,0,0,0.12); box-shadow: 0 12px 32px rgba(0,0,0,0.15); }
         body.light-theme .history-header { border-color: rgba(0,0,0,0.1); }
@@ -407,10 +429,12 @@
         body.light-theme .creator-credit { background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.08); color: #475569; }
         body.light-theme .creator-credit strong { color: #0f172a; text-shadow: 0 0 14px rgba(0,0,0,0.15); }
 
+        body.light-theme #solution-overlay { background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(241,245,249,0.95)); border-color: rgba(0,0,0,0.15); box-shadow: 0 20px 50px rgba(0,0,0,0.2); }
+        body.light-theme #solution-title { color: #e11d48; text-shadow: none; }
+        
         body.light-theme #transition-screen { background: radial-gradient(circle at 50% 35%, rgba(0,229,255,.25), transparent 26%), rgba(241,245,249,.94); }
         body.light-theme #transition-screen h2 { color: #0f172a; text-shadow: none; }
         body.light-theme #transition-screen p { color: #475569; }
-
 
         /* --- RESPONSIVE ADAPTATIONS --- */
         @media (max-width: 1024px) {
@@ -433,7 +457,10 @@
             .custom-color-grid { grid-template-columns:repeat(4,1fr); }
             .custom-palette-editor { padding:10px; }
 
-            #btn-back { top: 12px; left: 12px; padding: 8px 12px; font-size: 11px; }
+            /* Adjusted for new top buttons layout */
+            #top-left-controls { top: 12px; left: 12px; flex-direction: row; flex-wrap: wrap; max-width: calc(100vw - 60px); gap: 6px; }
+            .top-btn { padding: 8px 10px; font-size: 11px; gap: 5px; }
+            
             #toggle-history-btn { top: 12px; right: 12px; padding: 8px; }
             
             #palette-bar { max-width: calc(100vw - 24px); gap: 8px; padding: 10px 12px; top: 15px;}
@@ -450,6 +477,10 @@
             #copy-last-btn .copy-sub { display:none; }
             #ui-left { bottom: 20px; }
             #submit-btn { width: 60px; height: 60px; }
+            
+            #solution-overlay { padding: 20px 25px; width: 90%; }
+            #solution-title { font-size: 22px; }
+            .solution-dot { width: 28px; height: 28px; }
         }
 
         @media (max-height: 820px) {
@@ -514,7 +545,7 @@
                     </button>
                     <button class="preset-btn" onclick="setPalettePreset(this, 'classic')">
                         <span class="preset-name">CLASSIC</span><span class="preset-swatches">
-                            <i class="preset-dot" style="background:#ff243d"></i><i class="preset-dot" style="background:#ff6a00"></i><i class="preset-dot" style="background:#f2ff32"></i><i class="preset-dot" style="background:#00cf76"></i><i class="preset-dot" style="background:#11cfff"></i><i class="preset-dot" style="background:#245cff"></i>
+                            <i class="preset-dot" style="background:#ff243d"></i><i class="preset-dot" style="background:#ff6a00"></i><i class="preset-dot" style="background:#f2ff32"></i><i class="preset-dot" style="background:#00cf76"></i><i class="preset-dot" style="background:#11cfff"></i><i class="preset-dot" style="background:#245cff"></i><i class="preset-dot" style="background:#8f43ff"></i><i class="preset-dot" style="background:#ff4fbd"></i>
                         </span>
                     </button>
                     <button class="preset-btn custom-preset" id="custom-preset-btn" onclick="setPalettePreset(this, 'custom')">
@@ -596,10 +627,21 @@
 
     <!-- GAME UI -->
     <div id="game-ui">
-        <button id="btn-back" onclick="backToMenu()">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-            Menu
-        </button>
+        
+        <div id="top-left-controls">
+            <button id="btn-back" class="top-btn" onclick="backToMenu()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                Menu
+            </button>
+            <button id="btn-clue" class="top-btn" onclick="useClue()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="M5 5l1.5 1.5"></path><path d="M17.5 17.5L19 19"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="M5 19l1.5-1.5"></path><path d="M17.5 6.5L19 5"></path></svg>
+                Use Clue
+            </button>
+            <button id="btn-giveup" class="top-btn" onclick="giveUp()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>
+                Give Up
+            </button>
+        </div>
         
         <!-- Toggle History Button - Dimmed by default -->
         <button id="toggle-history-btn" class="dimmed" onclick="toggleHistory()" title="Toggle Guesses History">
@@ -631,6 +673,13 @@
         </div>
         
         <div id="status-overlay"></div>
+
+        <!-- SOLUTION OVERLAY -->
+        <div id="solution-overlay" class="hidden">
+            <h3 id="solution-title">SECRET CODE</h3>
+            <div id="solution-colors"></div>
+            <button class="btn-ready" style="margin-top: 5px; font-size: 16px; padding: 12px 30px;" onclick="backToMenu()">MAIN MENU</button>
+        </div>
     </div>
 
     <script>
@@ -813,7 +862,7 @@
             const dirLight = new THREE.DirectionalLight(t.dirLight, t.dirLightIntensity);
             dirLight.position.set(5, 15, 8); dirLight.castShadow = true;
             dirLight.shadow.mapSize.width = 1024; dirLight.shadow.mapSize.height = 1024; 
-            dirLight.shadow.bias = -0.001; // reduced acne artifact
+            dirLight.shadow.bias = -0.001; 
             scene.add(dirLight);
 
             const fillLight = new THREE.DirectionalLight(0xffffff, 0.26);
@@ -1027,15 +1076,20 @@
             document.getElementById('history-list').innerHTML = ''; document.getElementById('submit-btn').disabled = false;
             cameraCurrentY = 0; cameraTargetY = 0; activeTicketBlocks = [];
 
-            // Reset Right panel UI to be hidden by default
             document.getElementById('ui-right').classList.add('hidden');
             document.getElementById('toggle-history-btn').classList.add('dimmed');
+            document.getElementById('solution-overlay').classList.add('hidden');
 
             if (!scene) { initWebGL(); }
             buildBoard(); 
             
-            if(gameMode === 1) { targetCode = generateCode(); gameState = 'PLAYING'; document.getElementById('submit-label').innerText = "CHECK"; }
-            else { gameState = 'P1_SETTING'; document.getElementById('submit-label').innerText = "SET CODE"; }
+            if(gameMode === 1) { 
+                targetCode = generateCode(); gameState = 'PLAYING'; document.getElementById('submit-label').innerText = "CHECK"; 
+                document.getElementById('btn-clue').style.display = 'flex'; document.getElementById('btn-giveup').style.display = 'flex';
+            } else { 
+                gameState = 'P1_SETTING'; document.getElementById('submit-label').innerText = "SET CODE"; 
+                document.getElementById('btn-clue').style.display = 'none'; document.getElementById('btn-giveup').style.display = 'none';
+            }
 
             updateRowHighlight(); updateTurnPill(); updateCopyLastButton();
             document.getElementById('landing-screen').style.display = 'none'; document.getElementById('game-ui').style.display = 'block';
@@ -1047,14 +1101,57 @@
             paletteBar.classList.remove('palette-near-row'); paletteBar.classList.add('palette-docked');
             paletteBar.style.left = '50%'; paletteBar.style.top = '20px'; paletteBar.style.transform = 'translateX(-50%)';
             document.getElementById('submit-label').innerText = "CHECK";
+            document.getElementById('btn-clue').style.display = 'flex'; document.getElementById('btn-giveup').style.display = 'flex';
             updateRowHighlight(); updateTurnPill(); updateCopyLastButton();
         }
 
         function backToMenu() {
             gameState = 'LANDING'; document.getElementById('game-ui').style.display = 'none';
             document.getElementById('transition-screen').style.display = 'none'; document.getElementById('landing-screen').style.display = 'flex';
+            document.getElementById('solution-overlay').classList.add('hidden');
             updateCopyLastButton();
         }
+
+        /* --- NEW: CLUE & GIVE UP LOGIC --- */
+        function useClue() {
+            if (gameState !== 'PLAYING') return;
+            let wrongIndices = [];
+            for (let i = 0; i < settings.length; i++) {
+                if (currentGuess[i] !== targetCode[i]) { wrongIndices.push(i); }
+            }
+            if (wrongIndices.length === 0) { showStatus("ALREADY CORRECT!", "#00e5ff"); return; }
+            
+            let randomIndex = wrongIndices[Math.floor(Math.random() * wrongIndices.length)];
+            currentGuess[randomIndex] = targetCode[randomIndex];
+            
+            let sphere = guessSpheres[currentRow][randomIndex];
+            applyBallColor(sphere, ACTIVE_COLORS[targetCode[randomIndex]]);
+            sphere.visible = true; sphere.position.z = 0.25; sphere.scale.set(1.15, 1.15, 1.15);
+            setTimeout(() => { sphere.position.z = 0.5; sphere.scale.set(1, 1, 1); }, 100);
+            
+            showStatus("CLUE USED!", "#b24bf3");
+        }
+
+        function giveUp() {
+            if (gameState !== 'PLAYING') return;
+            gameState = 'OVER';
+            updateTurnPill(); updateCopyLastButton();
+            revealSolution("YOU GAVE UP!");
+        }
+
+        function revealSolution(titleText) {
+            let overlay = document.getElementById('solution-overlay');
+            let colorsContainer = document.getElementById('solution-colors');
+            document.getElementById('solution-title').innerText = titleText;
+
+            colorsContainer.innerHTML = '';
+            for (let i = 0; i < settings.length; i++) {
+                let colorHex = ACTIVE_CSS[targetCode[i]];
+                colorsContainer.innerHTML += `<div class="solution-dot" style="background:${colorHex}"></div>`;
+            }
+            overlay.classList.remove('hidden');
+        }
+        /* --------------------------------- */
 
         document.getElementById('submit-btn').addEventListener('click', () => {
             if (gameState === 'OVER' || gameState === 'ANIMATING') return;
@@ -1139,6 +1236,7 @@
                     currentRow++;
                     if (currentRow >= settings.tries) {
                         showStatus("GAME OVER", "#ff3b5c"); gameState = 'OVER'; updateTurnPill(); updateCopyLastButton();
+                        setTimeout(() => revealSolution("GAME OVER!"), 1000);
                     } else {
                         currentGuess = Array(settings.length).fill(-1); cameraTargetY = currentRow * rowSpacing; gameState = 'PLAYING';
                         document.getElementById('submit-btn').disabled = false; updateRowHighlight(); updateTurnPill(); updateCopyLastButton();
@@ -1162,7 +1260,6 @@
                 applyBallColor(sphere, ACTIVE_COLORS[currentGuess[col]]); sphere.visible = true; sphere.position.z = 0.34; sphere.scale.set(.92,.92,.92);
                 setTimeout(() => { if (sphere && sphere.visible) { sphere.position.z = 0.5; sphere.scale.set(1,1,1); } }, 55 + col * 34);
             }
-            // Removed overlay status popup for seamless UX
         }
 
         function positionCopyLastButton() {
@@ -1209,7 +1306,7 @@
                 dragGhostElement.style.left = e.clientX + 'px'; dragGhostElement.style.top = e.clientY + 'px';
                 document.body.appendChild(dragGhostElement); return; 
             }
-            if (e.target.closest('#ui-left') || e.target.closest('#ui-right') || e.target.closest('#palette-bar') || e.target.closest('#btn-back') || e.target.closest('#copy-last-btn') || e.target.closest('#toggle-history-btn')) return;
+            if (e.target.closest('#ui-left') || e.target.closest('#ui-right') || e.target.closest('#palette-bar') || e.target.closest('#top-left-controls') || e.target.closest('#copy-last-btn') || e.target.closest('#toggle-history-btn') || e.target.closest('#solution-overlay')) return;
             isCameraDragging = true; dragStartY = e.clientY; dragDelta = 0;
         });
 
